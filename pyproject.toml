@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "forex-robot-backtester"
+version = "0.1.0"
+description = "ATR-adaptive forex scalping and pullback strategy backtester for EUR/USD and GBP/USD."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+    "pandas",
+    "yfinance",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+]
+
+[project.scripts]
+forex-robot = "forex_robot.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["forex_robot*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
