@@ -31,6 +31,30 @@ def atr(frame: pd.DataFrame, period: int) -> pd.Series:
     return true_range(frame).ewm(alpha=1 / period, adjust=False, min_periods=period).mean()
 
 
+def adx(frame: pd.DataFrame, period: int) -> pd.Series:
+    """Average Directional Index for trend-strength filtering."""
+
+    if period < 1:
+        raise ValueError("ADX period must be positive.")
+    up_move = frame["high"].diff()
+    down_move = -frame["low"].diff()
+    plus_dm = np.where((up_move > down_move) & (up_move > 0), up_move, 0.0)
+    minus_dm = np.where((down_move > up_move) & (down_move > 0), down_move, 0.0)
+    average_true_range = atr(frame, period)
+    plus_di = 100.0 * pd.Series(plus_dm, index=frame.index).ewm(
+        alpha=1 / period,
+        adjust=False,
+        min_periods=period,
+    ).mean() / average_true_range
+    minus_di = 100.0 * pd.Series(minus_dm, index=frame.index).ewm(
+        alpha=1 / period,
+        adjust=False,
+        min_periods=period,
+    ).mean() / average_true_range
+    directional_index = ((plus_di - minus_di).abs() / (plus_di + minus_di).replace(0.0, np.nan)) * 100.0
+    return directional_index.ewm(alpha=1 / period, adjust=False, min_periods=period).mean()
+
+
 def rsi(series: pd.Series, period: int) -> pd.Series:
     if period < 1:
         raise ValueError("RSI period must be positive.")

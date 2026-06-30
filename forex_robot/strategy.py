@@ -6,7 +6,7 @@ from dataclasses import asdict, dataclass
 
 import pandas as pd
 
-from forex_robot.indicators import atr, ema, rolling_slope, rsi
+from forex_robot.indicators import adx, atr, ema, rolling_slope, rsi
 
 
 @dataclass(frozen=True)
@@ -22,9 +22,13 @@ class StrategyParams:
     slow_ema: int = 80
     rsi_period: int = 14
     atr_period: int = 14
+    adx_period: int = 14
     slope_period: int = 20
     pullback_atr: float = 0.35
     breakout_atr: float = 0.05
+    breakout_lookback: int = 1
+    min_body_atr: float = 0.0
+    min_adx: float = 0.0
     stop_atr: float = 1.4
     tp1_r: float = 0.8
     tp2_r: float = 1.4
@@ -59,17 +63,23 @@ def build_signals(frame: pd.DataFrame, params: StrategyParams) -> pd.DataFrame:
         raise ValueError("signal_mode must be pullback, hf_reversion, hf_momentum, or hf_micro.")
     if params.max_hold_bars < 0:
         raise ValueError("max_hold_bars cannot be negative.")
+    if params.breakout_lookback < 1:
+        raise ValueError("breakout_lookback must be at least 1.")
+    if params.min_body_atr < 0:
+        raise ValueError("min_body_atr cannot be negative.")
 
     data = frame.copy()
     data["ema_fast"] = ema(data["close"], params.fast_ema)
     data["ema_slow"] = ema(data["close"], params.slow_ema)
     data["atr"] = atr(data, params.atr_period)
+    data["adx"] = adx(data, params.adx_period)
     data["rsi"] = rsi(data["close"], params.rsi_period)
     data["slope"] = rolling_slope(data["ema_slow"], params.slope_period)
     data["slope_atr"] = data["slope"] / data["atr"].replace(0.0, pd.NA)
+    data["body_atr"] = (data["close"] - data["open"]).abs() / data["atr"].replace(0.0, pd.NA)
 
-    previous_high = data["high"].shift(1)
-    previous_low = data["low"].shift(1)
+    previous_high = data["high"].rolling(params.breakout_lookback, min_periods=params.breakout_lookback).max().shift(1)
+    previous_low = data["low"].rolling(params.breakout_lookback, min_periods=params.breakout_lookback).min().shift(1)
     previous_rsi = data["rsi"].shift(1)
     hour = data.index.hour
     if params.session_start_hour < params.session_end_hour:
@@ -94,10 +104,11 @@ def build_signals(frame: pd.DataFrame, params: StrategyParams) -> pd.DataFrame:
     short_recovery = (previous_rsi >= params.rsi_short_min) & (data["rsi"] < previous_rsi)
     long_break = data["close"] >= (previous_high + params.breakout_atr * data["atr"])
     short_break = data["close"] <= (previous_low - params.breakout_atr * data["atr"])
+    breakout_quality = (data["adx"] >= params.min_adx) & (data["body_atr"] >= params.min_body_atr)
 
     if params.signal_mode == "pullback":
-        long_signal = uptrend & long_pullback & long_recovery & long_break
-        short_signal = downtrend & short_pullback & short_recovery & short_break
+        long_signal = uptrend & long_pullback & long_recovery & long_break & breakout_quality
+        short_signal = downtrend & short_pullback & short_recovery & short_break & breakout_quality
     elif params.signal_mode == "hf_reversion":
         trend_buffer = params.pullback_atr * data["atr"]
         long_signal = (
@@ -116,14 +127,15 @@ def build_signals(frame: pd.DataFrame, params: StrategyParams) -> pd.DataFrame:
         mild_uptrend = (data["ema_fast"] >= data["ema_slow"]) & (data["slope_atr"] >= -params.min_slope_atr)
         mild_downtrend = (data["ema_fast"] <= data["ema_slow"]) & (data["slope_atr"] <= params.min_slope_atr)
         if params.signal_mode == "hf_momentum":
-            long_signal = mild_uptrend & long_recovery & long_break
-            short_signal = mild_downtrend & short_recovery & short_break
+            long_signal = mild_uptrend & long_recovery & long_break & breakout_quality
+            short_signal = mild_downtrend & short_recovery & short_break & breakout_quality
         else:
             candle_range = (data["high"] - data["low"]).abs()
             enough_range = candle_range >= params.breakout_atr * data["atr"]
             price_change = data["close"] - data["close"].shift(1)
             long_signal = (
                 mild_uptrend
+                & breakout_quality
                 & enough_range
                 & (price_change > 0)
                 & (data["close"] > data["ema_fast"])
@@ -131,6 +143,7 @@ def build_signals(frame: pd.DataFrame, params: StrategyParams) -> pd.DataFrame:
             )
             short_signal = (
                 mild_downtrend
+                & breakout_quality
                 & enough_range
                 & (price_change < 0)
                 & (data["close"] < data["ema_fast"])
@@ -146,4 +159,4 @@ def build_signals(frame: pd.DataFrame, params: StrategyParams) -> pd.DataFrame:
     data["tp3_distance"] = params.tp3_r * data["stop_distance"]
     data["trailing_distance"] = params.trailing_atr * data["atr"]
     data["max_hold_bars"] = params.max_hold_bars
-    return data.dropna(subset=["ema_fast", "ema_slow", "atr", "slope_atr"])
+    return data.dropna(subset=["ema_fast", "ema_slow", "atr", "adx", "slope_atr", "body_atr"])
