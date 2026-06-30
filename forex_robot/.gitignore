@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.pyo
+data/cache/
+results/*.csv
+results/*.json
+results/backtest_output.txt
