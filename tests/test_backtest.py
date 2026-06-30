@@ -44,6 +44,8 @@ def test_backtester_closes_three_take_profits() -> None:
     assert result.trades[0].exit_reason == "tp3"
     assert result.metrics["net_profit"] > 0
     assert len(result.trades[0].partial_exits) == 3
+    assert result.metrics["average_daily_trades"] == 1.0
+    assert result.metrics["average_daily_win_rate_pct"] == 100.0
 
 
 def test_strategy_generates_required_columns() -> None:
@@ -72,3 +74,40 @@ def test_strategy_generates_required_columns() -> None:
 
     assert {"ema_fast", "ema_slow", "atr", "rsi", "signal", "stop_distance"}.issubset(signals.columns)
     assert set(signals["signal"].unique()).issubset({-1, 0, 1})
+
+
+def test_high_frequency_strategy_mode_generates_valid_signals() -> None:
+    index = pd.date_range("2026-01-01", periods=220, freq="5min")
+    close = pd.Series(
+        [1.1000 + ((i % 12) - 6) * 0.00008 + i * 0.000001 for i in range(220)],
+        index=index,
+    )
+    frame = pd.DataFrame(
+        {
+            "open": close.shift(1).fillna(close.iloc[0]),
+            "high": close + 0.0003,
+            "low": close - 0.0003,
+            "close": close,
+        },
+        index=index,
+    )
+
+    signals = build_signals(
+        frame,
+        StrategyParams(
+            signal_mode="hf_reversion",
+            fast_ema=5,
+            slow_ema=21,
+            rsi_period=7,
+            atr_period=7,
+            slope_period=5,
+            pullback_atr=0.05,
+            rsi_long_max=50.0,
+            rsi_short_min=50.0,
+            session_start_hour=0,
+            session_end_hour=24,
+        ),
+    )
+
+    assert set(signals["signal"].unique()).issubset({-1, 0, 1})
+    assert signals["stop_distance"].gt(0).all()

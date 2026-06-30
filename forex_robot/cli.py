@@ -45,6 +45,9 @@ def build_parser() -> argparse.ArgumentParser:
     optimize_parser.add_argument("--top-n", type=int, default=10)
     optimize_parser.add_argument("--seed", type=int, default=42)
     optimize_parser.add_argument("--min-trades", type=int, default=8)
+    optimize_parser.add_argument("--objective", choices=["balanced", "high-frequency"], default="balanced")
+    optimize_parser.add_argument("--target-daily-trades", type=float, default=20.0)
+    optimize_parser.add_argument("--target-win-rate", type=float, default=90.0)
 
     backtest_parser = subparsers.add_parser("backtest", help="Run one parameter set on real OHLC data.")
     add_common_args(backtest_parser)
@@ -75,6 +78,9 @@ def command_optimize(args: argparse.Namespace) -> int:
         top_n=args.top_n,
         seed=args.seed,
         min_trades=args.min_trades,
+        objective=args.objective,
+        target_daily_trades=args.target_daily_trades,
+        target_win_rate=args.target_win_rate,
         config=config,
     )
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -83,9 +89,12 @@ def command_optimize(args: argparse.Namespace) -> int:
         "symbols": args.symbols,
         "timeframes": args.timeframes,
         "searched_candidates": args.evaluations,
-        "estimated_search_space": estimate_search_space_size(),
         "initial_capital": args.initial_capital,
         "risk_per_trade": args.risk_per_trade,
+        "objective": args.objective,
+        "target_daily_trades": args.target_daily_trades,
+        "target_win_rate": args.target_win_rate,
+        "estimated_search_space": estimate_search_space_size(args.objective),
         "results": candidate_results_to_dict(results),
     }
     write_json(args.output_dir / "optimization_results.json", output)

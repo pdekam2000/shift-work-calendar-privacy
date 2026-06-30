@@ -14,6 +14,7 @@ from forex_robot.strategy import StrategyParams, build_signals
 
 
 PARAMETER_SPACE = {
+    "signal_mode": ["pullback"],
     "fast_ema": [8, 13, 20, 34],
     "slow_ema": [55, 80, 120, 160],
     "rsi_period": [7, 14],
@@ -32,6 +33,26 @@ PARAMETER_SPACE = {
     "session": [(0, 24), (6, 20), (7, 17)],
 }
 
+HIGH_FREQUENCY_PARAMETER_SPACE = {
+    "signal_mode": ["hf_reversion", "hf_momentum"],
+    "fast_ema": [5, 8, 13, 20],
+    "slow_ema": [21, 34, 55, 80],
+    "rsi_period": [5, 7, 10, 14],
+    "atr_period": [5, 7, 10, 14],
+    "slope_period": [5, 10, 20],
+    "pullback_atr": [0.05, 0.1, 0.2, 0.35],
+    "breakout_atr": [0.0, 0.01, 0.03, 0.05],
+    "stop_atr": [1.2, 1.8, 2.4, 3.2, 4.0],
+    "tp1_r": [0.15, 0.25, 0.35, 0.5],
+    "tp2_r": [0.4, 0.6, 0.8, 1.0],
+    "tp3_r": [0.9, 1.2, 1.6, 2.2],
+    "trailing_atr": [0.5, 0.8, 1.2],
+    "rsi_long_max": [38.0, 42.0, 46.0, 50.0],
+    "rsi_short_min": [50.0, 54.0, 58.0, 62.0],
+    "min_slope_atr": [0.0, 0.01, 0.03],
+    "session": [(0, 24), (6, 20), (7, 17), (12, 20)],
+}
+
 
 @dataclass(frozen=True)
 class CandidateResult:
@@ -41,22 +62,36 @@ class CandidateResult:
     market_metrics: list[dict[str, Any]]
 
 
-def estimate_search_space_size() -> int:
+def parameter_space_for_objective(objective: str) -> dict[str, list[Any]]:
+    if objective == "high-frequency":
+        return HIGH_FREQUENCY_PARAMETER_SPACE
+    if objective == "balanced":
+        return PARAMETER_SPACE
+    raise ValueError("objective must be balanced or high-frequency.")
+
+
+def estimate_search_space_size(objective: str = "balanced") -> int:
     size = 1
-    for values in PARAMETER_SPACE.values():
+    for values in parameter_space_for_objective(objective).values():
         size *= len(values)
     return size
 
 
-def random_candidates(limit: int, seed: int = 42) -> list[StrategyParams]:
+def random_candidates(
+    limit: int,
+    seed: int = 42,
+    *,
+    objective: str = "balanced",
+) -> list[StrategyParams]:
     rng = Random(seed)
     candidates: list[StrategyParams] = []
     seen: set[tuple[Any, ...]] = set()
-    keys = list(PARAMETER_SPACE)
+    parameter_space = parameter_space_for_objective(objective)
+    keys = list(parameter_space)
 
     max_attempts = max(limit * 20, 100)
     for _ in range(max_attempts):
-        raw = {key: rng.choice(PARAMETER_SPACE[key]) for key in keys}
+        raw = {key: rng.choice(parameter_space[key]) for key in keys}
         session_start, session_end = raw.pop("session")
         raw["session_start_hour"] = session_start
         raw["session_end_hour"] = session_end
@@ -73,10 +108,11 @@ def random_candidates(limit: int, seed: int = 42) -> list[StrategyParams]:
     return candidates
 
 
-def grid_candidates(limit: int | None = None) -> list[StrategyParams]:
-    keys = list(PARAMETER_SPACE)
+def grid_candidates(limit: int | None = None, *, objective: str = "balanced") -> list[StrategyParams]:
+    parameter_space = parameter_space_for_objective(objective)
+    keys = list(parameter_space)
     candidates: list[StrategyParams] = []
-    for values in product(*(PARAMETER_SPACE[key] for key in keys)):
+    for values in product(*(parameter_space[key] for key in keys)):
         raw = dict(zip(keys, values, strict=True))
         session_start, session_end = raw.pop("session")
         raw["session_start_hour"] = session_start
@@ -98,10 +134,13 @@ def optimize(
     top_n: int = 10,
     seed: int = 42,
     min_trades: int = 8,
+    objective: str = "balanced",
+    target_daily_trades: float = 20.0,
+    target_win_rate: float = 90.0,
     config: BacktestConfig | None = None,
 ) -> list[CandidateResult]:
     backtester = Backtester(config)
-    candidates = random_candidates(evaluations, seed=seed)
+    candidates = random_candidates(evaluations, seed=seed, objective=objective)
     results: list[CandidateResult] = []
 
     for params in candidates:
@@ -124,7 +163,13 @@ def optimize(
         if not market_metrics:
             continue
         aggregate = aggregate_metrics(market_metrics)
-        score = score_metrics(aggregate, min_trades=min_trades)
+        score = score_metrics(
+            aggregate,
+            min_trades=min_trades,
+            objective=objective,
+            target_daily_trades=target_daily_trades,
+            target_win_rate=target_win_rate,
+        )
         results.append(
             CandidateResult(
                 score=score,
@@ -144,7 +189,12 @@ def aggregate_metrics(market_metrics: list[dict[str, Any]]) -> dict[str, float]:
     average_return = sum(float(item["return_pct"]) for item in market_metrics) / count
     average_drawdown = sum(float(item["max_drawdown_pct"]) for item in market_metrics) / count
     average_win_rate = sum(float(item["win_rate_pct"]) for item in market_metrics) / count
+    average_daily_win_rate = sum(float(item.get("average_daily_win_rate_pct", 0.0)) for item in market_metrics) / count
     average_profit_factor = sum(float(item["profit_factor"]) for item in market_metrics) / count
+    estimated_robot_daily_trades = sum(float(item.get("average_daily_trades", 0.0)) for item in market_metrics)
+    average_high_frequency_day_ratio = (
+        sum(float(item.get("high_frequency_day_ratio", 0.0)) for item in market_metrics) / count
+    )
     profitable_markets = sum(1 for item in market_metrics if float(item["net_profit"]) > 0)
     return {
         "markets": float(count),
@@ -153,14 +203,38 @@ def aggregate_metrics(market_metrics: list[dict[str, Any]]) -> dict[str, float]:
         "average_return_pct": round(average_return, 2),
         "average_drawdown_pct": round(average_drawdown, 2),
         "average_win_rate_pct": round(average_win_rate, 2),
+        "average_daily_win_rate_pct": round(average_daily_win_rate, 2),
+        "estimated_robot_daily_trades": round(estimated_robot_daily_trades, 2),
         "average_profit_factor": round(average_profit_factor, 3),
+        "average_high_frequency_day_ratio": round(average_high_frequency_day_ratio, 3),
         "profitable_market_ratio": round(profitable_markets / count, 3),
     }
 
 
-def score_metrics(metrics: dict[str, float], *, min_trades: int) -> float:
+def score_metrics(
+    metrics: dict[str, float],
+    *,
+    min_trades: int,
+    objective: str = "balanced",
+    target_daily_trades: float = 20.0,
+    target_win_rate: float = 90.0,
+) -> float:
     if metrics["total_trades"] < min_trades:
         return -1_000_000.0 + metrics["total_trades"]
+    if objective == "high-frequency":
+        daily_trade_score = min(metrics["estimated_robot_daily_trades"], target_daily_trades) / target_daily_trades
+        win_rate_gap = metrics["average_win_rate_pct"] - target_win_rate
+        profit_penalty = min(metrics["total_net_profit"], 0.0) * 2.0
+        return (
+            metrics["average_return_pct"] * 1.5
+            - metrics["average_drawdown_pct"] * 1.2
+            + metrics["average_profit_factor"] * 8.0
+            + metrics["profitable_market_ratio"] * 10.0
+            + daily_trade_score * 40.0
+            + win_rate_gap * 1.5
+            + metrics["average_high_frequency_day_ratio"] * 50.0
+            + profit_penalty
+        )
     return (
         metrics["average_return_pct"]
         - 1.5 * metrics["average_drawdown_pct"]

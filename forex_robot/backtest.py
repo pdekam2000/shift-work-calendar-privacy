@@ -297,6 +297,7 @@ class Backtester:
         win_rate = len(wins) / trade_count * 100.0 if trade_count else 0.0
         profit_factor = gross_profit / gross_loss if gross_loss else (gross_profit if gross_profit else 0.0)
         net_profit = final_equity - self.config.initial_capital
+        daily = self._daily_metrics(trades)
         return {
             "initial_capital": round(self.config.initial_capital, 2),
             "final_equity": round(final_equity, 2),
@@ -307,6 +308,42 @@ class Backtester:
             "win_rate_pct": round(win_rate, 2),
             "profit_factor": round(profit_factor, 3),
             "average_trade": round(net_profit / trade_count, 2) if trade_count else 0.0,
+            **daily,
+        }
+
+    def _daily_metrics(self, trades: list[Trade]) -> dict[str, float | int]:
+        if not trades:
+            return {
+                "trading_day_count": 0,
+                "average_daily_trades": 0.0,
+                "average_daily_win_rate_pct": 0.0,
+                "days_with_20_trades": 0,
+                "days_with_20_trades_90_win": 0,
+                "high_frequency_day_ratio": 0.0,
+            }
+
+        daily_rows = []
+        trade_frame = pd.DataFrame(
+            {
+                "entry_time": pd.to_datetime([trade.entry_time for trade in trades]),
+                "win": [trade.pnl > 0 for trade in trades],
+            }
+        )
+        for _, day_trades in trade_frame.groupby(trade_frame["entry_time"].dt.date):
+            day_count = len(day_trades)
+            day_win_rate = float(day_trades["win"].mean() * 100.0)
+            daily_rows.append((day_count, day_win_rate))
+
+        trading_day_count = len(daily_rows)
+        days_with_20 = sum(1 for count, _ in daily_rows if count >= 20)
+        days_with_target = sum(1 for count, win_rate in daily_rows if count >= 20 and win_rate >= 90.0)
+        return {
+            "trading_day_count": trading_day_count,
+            "average_daily_trades": round(sum(count for count, _ in daily_rows) / trading_day_count, 2),
+            "average_daily_win_rate_pct": round(sum(win_rate for _, win_rate in daily_rows) / trading_day_count, 2),
+            "days_with_20_trades": days_with_20,
+            "days_with_20_trades_90_win": days_with_target,
+            "high_frequency_day_ratio": round(days_with_target / trading_day_count, 3),
         }
 
     def _empty_result(self, symbol: str, timeframe: str, strategy: dict[str, Any]) -> BacktestResult:

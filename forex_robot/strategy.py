@@ -35,8 +35,9 @@ class StrategyParams:
     min_slope_atr: float = 0.01
     session_start_hour: int = 6
     session_end_hour: int = 20
+    signal_mode: str = "pullback"
 
-    def to_dict(self) -> dict[str, float | int]:
+    def to_dict(self) -> dict[str, float | int | str]:
         return asdict(self)
 
 
@@ -53,6 +54,8 @@ def build_signals(frame: pd.DataFrame, params: StrategyParams) -> pd.DataFrame:
         raise ValueError("Session hours must be within the 0-24 range.")
     if params.tp1_r <= 0 or params.tp2_r <= params.tp1_r or params.tp3_r <= params.tp2_r:
         raise ValueError("Take-profit R multiples must be positive and increasing.")
+    if params.signal_mode not in {"pullback", "hf_reversion", "hf_momentum"}:
+        raise ValueError("signal_mode must be pullback, hf_reversion, or hf_momentum.")
 
     data = frame.copy()
     data["ema_fast"] = ema(data["close"], params.fast_ema)
@@ -89,9 +92,32 @@ def build_signals(frame: pd.DataFrame, params: StrategyParams) -> pd.DataFrame:
     long_break = data["close"] >= (previous_high + params.breakout_atr * data["atr"])
     short_break = data["close"] <= (previous_low - params.breakout_atr * data["atr"])
 
+    if params.signal_mode == "pullback":
+        long_signal = uptrend & long_pullback & long_recovery & long_break
+        short_signal = downtrend & short_pullback & short_recovery & short_break
+    elif params.signal_mode == "hf_reversion":
+        trend_buffer = params.pullback_atr * data["atr"]
+        long_signal = (
+            (data["close"] >= data["ema_slow"] - trend_buffer)
+            & (data["low"] <= data["ema_fast"] - params.pullback_atr * data["atr"])
+            & (data["rsi"] <= params.rsi_long_max)
+            & (data["close"] > data["open"])
+        )
+        short_signal = (
+            (data["close"] <= data["ema_slow"] + trend_buffer)
+            & (data["high"] >= data["ema_fast"] + params.pullback_atr * data["atr"])
+            & (data["rsi"] >= params.rsi_short_min)
+            & (data["close"] < data["open"])
+        )
+    else:
+        mild_uptrend = (data["ema_fast"] >= data["ema_slow"]) & (data["slope_atr"] >= -params.min_slope_atr)
+        mild_downtrend = (data["ema_fast"] <= data["ema_slow"]) & (data["slope_atr"] <= params.min_slope_atr)
+        long_signal = mild_uptrend & long_recovery & long_break
+        short_signal = mild_downtrend & short_recovery & short_break
+
     data["signal"] = 0
-    data.loc[in_session & uptrend & long_pullback & long_recovery & long_break, "signal"] = 1
-    data.loc[in_session & downtrend & short_pullback & short_recovery & short_break, "signal"] = -1
+    data.loc[in_session & long_signal, "signal"] = 1
+    data.loc[in_session & short_signal, "signal"] = -1
     data["stop_distance"] = params.stop_atr * data["atr"]
     data["tp1_distance"] = params.tp1_r * data["stop_distance"]
     data["tp2_distance"] = params.tp2_r * data["stop_distance"]
