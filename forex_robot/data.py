@@ -167,7 +167,7 @@ def align_conversion_series(
         return market["close"].reindex(market.index).ffill()
     if eurusd is None:
         return pd.Series(1.0, index=market.index)
-    return eurusd["close"].reindex(market.index, method="ffill").fillna(method="bfill")
+    return eurusd["close"].reindex(market.index, method="ffill").bfill()
 
 
 def load_many(
