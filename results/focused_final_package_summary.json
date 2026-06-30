@@ -1,0 +1,144 @@
+{
+  "conclusion": "The best current candidate is a lower-frequency H4 breakout-pullback strategy, not a high-frequency scalper.",
+  "generated_at": "2026-06-30T12:10:00+00:00",
+  "recommended_demo_symbols": [
+    "EURUSD",
+    "AUDUSD",
+    "GBPUSD"
+  ],
+  "optional_symbols": [
+    "NZDUSD"
+  ],
+  "timeframe": "H4",
+  "account_assumptions": {
+    "initial_capital_eur": 1000,
+    "risk_per_trade": 0.01,
+    "spread_pips": 0.8,
+    "slippage_pips": 0.1,
+    "commission_per_million": 25.0
+  },
+  "best_params": {
+    "adx_period": 21,
+    "atr_period": 21,
+    "breakout_atr": 0.03,
+    "breakout_lookback": 5,
+    "fast_ema": 8,
+    "max_hold_bars": 0,
+    "min_adx": 0.0,
+    "min_body_atr": 0.1,
+    "min_slope_atr": 0.0,
+    "pullback_atr": 0.45,
+    "rsi_long_max": 60.0,
+    "rsi_period": 14,
+    "rsi_short_min": 45.0,
+    "session_end_hour": 17,
+    "session_start_hour": 7,
+    "signal_mode": "pullback",
+    "slope_period": 20,
+    "slow_ema": 55,
+    "stop_atr": 0.9,
+    "tp1_r": 1.0,
+    "tp2_r": 1.6,
+    "tp3_r": 3.6,
+    "trailing_atr": 1.6
+  },
+  "three_pair_optimization": {
+    "symbols": [
+      "EURUSD=X",
+      "AUDUSD=X",
+      "GBPUSD=X"
+    ],
+    "net_profit_eur": 451.51,
+    "average_return_pct": 15.05,
+    "trades": 235,
+    "average_win_rate_pct": 56.14,
+    "average_profit_factor": 1.401,
+    "average_drawdown_pct": 6.75,
+    "profitable_market_ratio": 1.0
+  },
+  "four_pair_validation": {
+    "symbols": [
+      "EURUSD=X",
+      "AUDUSD=X",
+      "GBPUSD=X",
+      "NZDUSD=X"
+    ],
+    "net_profit_eur": 515.23,
+    "average_return_pct": 12.88,
+    "trades": 299,
+    "pairs": [
+      {
+        "symbol": "EURUSD=X",
+        "net_profit_eur": 267.43,
+        "return_pct": 26.74,
+        "trades": 77,
+        "win_rate_pct": 61.04,
+        "profit_factor": 1.761,
+        "max_drawdown_pct": 6.56
+      },
+      {
+        "symbol": "AUDUSD=X",
+        "net_profit_eur": 58.37,
+        "return_pct": 5.84,
+        "trades": 68,
+        "win_rate_pct": 52.94,
+        "profit_factor": 1.178,
+        "max_drawdown_pct": 6.83
+      },
+      {
+        "symbol": "GBPUSD=X",
+        "net_profit_eur": 125.71,
+        "return_pct": 12.57,
+        "trades": 90,
+        "win_rate_pct": 54.44,
+        "profit_factor": 1.265,
+        "max_drawdown_pct": 6.87
+      },
+      {
+        "symbol": "NZDUSD=X",
+        "net_profit_eur": 63.72,
+        "return_pct": 6.37,
+        "trades": 64,
+        "win_rate_pct": 57.81,
+        "profit_factor": 1.227,
+        "max_drawdown_pct": 5.27
+      }
+    ]
+  },
+  "walk_forward_70_30": [
+    {
+      "symbol": "EURUSD=X",
+      "test_30pct_net_profit_eur": 64.08,
+      "test_30pct_trades": 16,
+      "test_30pct_profit_factor": 2.008,
+      "test_30pct_max_drawdown_pct": 2.71
+    },
+    {
+      "symbol": "AUDUSD=X",
+      "test_30pct_net_profit_eur": 21.61,
+      "test_30pct_trades": 22,
+      "test_30pct_profit_factor": 1.193,
+      "test_30pct_max_drawdown_pct": 4.02
+    },
+    {
+      "symbol": "GBPUSD=X",
+      "test_30pct_net_profit_eur": -21.89,
+      "test_30pct_trades": 29,
+      "test_30pct_profit_factor": 0.866,
+      "test_30pct_max_drawdown_pct": 6.87
+    },
+    {
+      "symbol": "NZDUSD=X",
+      "test_30pct_net_profit_eur": 39.26,
+      "test_30pct_trades": 18,
+      "test_30pct_profit_factor": 1.632,
+      "test_30pct_max_drawdown_pct": 2.73
+    }
+  ],
+  "risk_notes": [
+    "GBPUSD had a negative last-30-percent split despite positive full-sample performance.",
+    "The strategy should be demo-tested before live trading.",
+    "Start with EURUSD H4 first, then add other pairs only after broker-specific Strategy Tester results are acceptable.",
+    "This is not a profit guarantee."
+  ]
+}

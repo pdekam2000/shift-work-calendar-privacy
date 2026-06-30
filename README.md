@@ -80,7 +80,21 @@ forex-robot backtest \
 
 ## Notes for live trading integration
 
-The repository intentionally stops at research/backtesting. A real full-auto
-robot must add broker integration, order validation, connection monitoring,
-duplicate-order protection, market-hours handling, news filters, deployment
-observability, and kill-switch controls.
+The repository includes an experimental MetaTrader 5 Expert Advisor under
+`mt5/Experts/ForexBreakoutPullbackEA.mq5`. Treat it as a demo/forward-testing
+bridge from the research code, not as a guaranteed production trading system.
+
+Read the Persian MT5 guide before use:
+
+```text
+docs/MT5_RUN_GUIDE_FA.md
+```
+
+The latest focused summary is:
+
+```text
+results/focused_final_package_summary.json
+```
+
+A real full-auto robot still needs broker-specific validation, order execution
+monitoring, news filters, VPS monitoring, and kill-switch controls.
