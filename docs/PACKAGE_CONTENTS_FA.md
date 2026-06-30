@@ -7,6 +7,7 @@
 - `mt5/Experts/ForexBreakoutPullbackEA.mq5`
   - Expert Advisor برای MetaTrader 5
   - منطق H4 breakout-pullback با ATR/EMA/RSI/ADX و سه سطح TP
+  - پنل نمایشی روی چارت با نام مالک، لوگوی رنگی DRAGON FX و وضعیت کار ربات
 
 - `docs/MT5_RUN_GUIDE_FA.md`
   - راهنمای فارسی نصب، compile، بک تست و اجرای دمو در MT5

@@ -83,6 +83,8 @@ forex-robot backtest \
 The repository includes an experimental MetaTrader 5 Expert Advisor under
 `mt5/Experts/ForexBreakoutPullbackEA.mq5`. Treat it as a demo/forward-testing
 bridge from the research code, not as a guaranteed production trading system.
+The EA also displays a small chart panel with the owner name, a colorful
+`DRAGON FX` logo, and live strategy-duty status.
 
 Read the Persian MT5 guide before use:
 

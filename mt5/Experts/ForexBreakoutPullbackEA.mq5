@@ -35,6 +35,9 @@ input int    InpSessionEndHour     = 17;
 input double InpMaxSpreadPips      = 2.0;
 input bool   InpAllowLong          = true;
 input bool   InpAllowShort         = true;
+input bool   InpShowChartPanel     = true;
+input string InpOwnerName          = "pedram kamangar";
+input string InpPanelStatusText    = "Robot is active and monitoring the strategy.";
 
 CTrade trade;
 int fastEmaHandle;
@@ -43,6 +46,7 @@ int rsiHandle;
 int atrHandle;
 int adxHandle;
 datetime lastBarTime = 0;
+string panelPrefix = "FBP_PANEL_";
 
 string StateKey(const string suffix)
 {
@@ -162,6 +166,90 @@ bool HasPosition()
          return true;
    }
    return false;
+}
+
+void DeleteChartPanel()
+{
+   int total = ObjectsTotal(0, 0, -1);
+   for(int i = total - 1; i >= 0; i--)
+   {
+      string name = ObjectName(0, i, 0, -1);
+      if(StringFind(name, panelPrefix) == 0)
+         ObjectDelete(0, name);
+   }
+}
+
+void CreatePanelLabel(const string name, const int x, const int y, const string text, const color textColor, const int fontSize)
+{
+   string objectName = panelPrefix + name;
+   if(ObjectFind(0, objectName) < 0)
+      ObjectCreate(0, objectName, OBJ_LABEL, 0, 0, 0);
+
+   ObjectSetInteger(0, objectName, OBJPROP_CORNER, CORNER_LEFT_UPPER);
+   ObjectSetInteger(0, objectName, OBJPROP_XDISTANCE, x);
+   ObjectSetInteger(0, objectName, OBJPROP_YDISTANCE, y);
+   ObjectSetInteger(0, objectName, OBJPROP_COLOR, textColor);
+   ObjectSetInteger(0, objectName, OBJPROP_FONTSIZE, fontSize);
+   ObjectSetString(0, objectName, OBJPROP_FONT, "Arial Bold");
+   ObjectSetString(0, objectName, OBJPROP_TEXT, text);
+}
+
+void CreatePanelBox(const string name, const int x, const int y, const int width, const int height, const color fillColor)
+{
+   string objectName = panelPrefix + name;
+   if(ObjectFind(0, objectName) < 0)
+      ObjectCreate(0, objectName, OBJ_RECTANGLE_LABEL, 0, 0, 0);
+
+   ObjectSetInteger(0, objectName, OBJPROP_CORNER, CORNER_LEFT_UPPER);
+   ObjectSetInteger(0, objectName, OBJPROP_XDISTANCE, x);
+   ObjectSetInteger(0, objectName, OBJPROP_YDISTANCE, y);
+   ObjectSetInteger(0, objectName, OBJPROP_XSIZE, width);
+   ObjectSetInteger(0, objectName, OBJPROP_YSIZE, height);
+   ObjectSetInteger(0, objectName, OBJPROP_BGCOLOR, fillColor);
+   ObjectSetInteger(0, objectName, OBJPROP_BORDER_TYPE, BORDER_FLAT);
+   ObjectSetInteger(0, objectName, OBJPROP_COLOR, clrDimGray);
+}
+
+void DrawDragonLogo()
+{
+   CreatePanelLabel("dragon_head", 24, 17, "DRAGON", clrOrangeRed, 16);
+   CreatePanelLabel("dragon_fx", 101, 20, "FX", clrDeepSkyBlue, 12);
+   CreatePanelBox("scale_1", 23, 42, 26, 6, clrRed);
+   CreatePanelBox("scale_2", 51, 42, 26, 6, clrOrange);
+   CreatePanelBox("scale_3", 79, 42, 26, 6, clrGold);
+   CreatePanelBox("scale_4", 107, 42, 26, 6, clrLimeGreen);
+   CreatePanelBox("scale_5", 135, 42, 26, 6, clrDeepSkyBlue);
+   CreatePanelBox("scale_6", 163, 42, 26, 6, clrMagenta);
+}
+
+void UpdateChartPanel()
+{
+   if(!InpShowChartPanel)
+   {
+      DeleteChartPanel();
+      return;
+   }
+
+   string duty = HasPosition() ? "Strategy duty: managing an open trade." : "Strategy duty: scanning H4 breakout-pullback signals.";
+   string tradeMode = TerminalInfoInteger(TERMINAL_TRADE_ALLOWED) ? "Algo trading: terminal allowed" : "Algo trading: check MT5 permissions";
+   double spreadPips = (SymbolInfoDouble(_Symbol, SYMBOL_ASK) - SymbolInfoDouble(_Symbol, SYMBOL_BID)) / PipSize();
+
+   CreatePanelBox("background", 10, 10, 390, 138, clrBlack);
+   CreatePanelBox("accent", 10, 10, 5, 138, clrOrangeRed);
+   DrawDragonLogo();
+   CreatePanelLabel("owner", 24, 56, "Owner: " + InpOwnerName, clrWhite, 10);
+   CreatePanelLabel("status", 24, 76, InpPanelStatusText, clrPaleGreen, 10);
+   CreatePanelLabel("duty", 24, 96, duty, clrLightSkyBlue, 10);
+   CreatePanelLabel(
+      "market",
+      24,
+      116,
+      StringFormat("%s %s | risk %.2f%% | spread %.1f pips", _Symbol, EnumToString(_Period), InpRiskPercent, spreadPips),
+      clrSilver,
+      9
+   );
+   CreatePanelLabel("permission", 24, 132, tradeMode, clrSilver, 8);
+   ChartRedraw(0);
 }
 
 void SavePositionState(const double entry, const double stopDistance, const bool isBuy, const double volume)
@@ -322,11 +410,13 @@ int OnInit()
    }
 
    trade.SetExpertMagicNumber(InpMagicNumber);
+   UpdateChartPanel();
    return INIT_SUCCEEDED;
 }
 
 void OnDeinit(const int reason)
 {
+   DeleteChartPanel();
    IndicatorRelease(fastEmaHandle);
    IndicatorRelease(slowEmaHandle);
    IndicatorRelease(rsiHandle);
@@ -337,6 +427,7 @@ void OnDeinit(const int reason)
 void OnTick()
 {
    ManageOpenPosition();
+   UpdateChartPanel();
 
    datetime currentBarTime = iTime(_Symbol, _Period, 0);
    if(currentBarTime == lastBarTime)
