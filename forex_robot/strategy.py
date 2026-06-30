@@ -121,17 +121,18 @@ def build_signals(frame: pd.DataFrame, params: StrategyParams) -> pd.DataFrame:
         else:
             candle_range = (data["high"] - data["low"]).abs()
             enough_range = candle_range >= params.breakout_atr * data["atr"]
+            price_change = data["close"] - data["close"].shift(1)
             long_signal = (
                 mild_uptrend
                 & enough_range
-                & (data["close"] > data["open"])
+                & (price_change > 0)
                 & (data["close"] > data["ema_fast"])
                 & (data["rsi"] >= params.rsi_long_max)
             )
             short_signal = (
                 mild_downtrend
                 & enough_range
-                & (data["close"] < data["open"])
+                & (price_change < 0)
                 & (data["close"] < data["ema_fast"])
                 & (data["rsi"] <= params.rsi_short_min)
             )
