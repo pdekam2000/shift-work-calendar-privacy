@@ -1,0 +1,163 @@
+{
+  "conclusion": "The best improvement found in this iteration is a lower-frequency EUR/USD 4h breakout-pullback strategy with better robustness than the earlier EUR/USD 1h result.",
+  "generated_at": "2026-06-30T11:55:00+00:00",
+  "new_filters_added": [
+    "ADX trend-strength filter",
+    "multi-candle breakout lookback",
+    "minimum candle-body-to-ATR filter"
+  ],
+  "focused_eurusd_1h_result": {
+    "comparison_baseline": {
+      "net_profit_eur": 162.28,
+      "return_pct": 16.23,
+      "trades": 212,
+      "win_rate_pct": 57.08,
+      "profit_factor": 1.163,
+      "max_drawdown_pct": 11.18
+    },
+    "optimized_with_breakout_filters": {
+      "net_profit_eur": 184.08,
+      "return_pct": 18.41,
+      "trades": 158,
+      "win_rate_pct": 58.23,
+      "profit_factor": 1.234,
+      "max_drawdown_pct": 6.39
+    },
+    "walk_forward_split": [
+      {
+        "split": "train_70pct",
+        "net_profit_eur": 218.44,
+        "return_pct": 21.84,
+        "trades": 120,
+        "win_rate_pct": 59.17,
+        "profit_factor": 1.378,
+        "max_drawdown_pct": 6.39
+      },
+      {
+        "split": "test_30pct",
+        "net_profit_eur": -36.79,
+        "return_pct": -3.68,
+        "trades": 37,
+        "win_rate_pct": 54.05,
+        "profit_factor": 0.783,
+        "max_drawdown_pct": 5.45
+      }
+    ],
+    "interpretation": "The EUR/USD 1h improvement reduced drawdown and improved in-sample profit, but the last 30% split was negative, so it is not robust enough by itself."
+  },
+  "focused_eurusd_4h_result": {
+    "best_params": {
+      "adx_period": 10,
+      "atr_period": 21,
+      "breakout_atr": 0.03,
+      "breakout_lookback": 3,
+      "fast_ema": 13,
+      "max_hold_bars": 0,
+      "min_adx": 0.0,
+      "min_body_atr": 0.2,
+      "min_slope_atr": 0.01,
+      "pullback_atr": 0.15,
+      "rsi_long_max": 60.0,
+      "rsi_period": 7,
+      "rsi_short_min": 45.0,
+      "session_end_hour": 17,
+      "session_start_hour": 7,
+      "signal_mode": "pullback",
+      "slope_period": 10,
+      "slow_ema": 55,
+      "stop_atr": 1.2,
+      "tp1_r": 0.5,
+      "tp2_r": 2.0,
+      "tp3_r": 2.2,
+      "trailing_atr": 1.2
+    },
+    "in_sample_metrics": {
+      "net_profit_eur": 227.27,
+      "return_pct": 22.73,
+      "trades": 100,
+      "win_rate_pct": 74.0,
+      "profit_factor": 1.77,
+      "max_drawdown_pct": 5.15
+    },
+    "walk_forward_split": [
+      {
+        "split": "train_70pct",
+        "net_profit_eur": 122.22,
+        "return_pct": 12.22,
+        "trades": 73,
+        "win_rate_pct": 72.6,
+        "profit_factor": 1.547,
+        "max_drawdown_pct": 5.15
+      },
+      {
+        "split": "test_30pct",
+        "net_profit_eur": 103.02,
+        "return_pct": 10.3,
+        "trades": 25,
+        "win_rate_pct": 80.0,
+        "profit_factor": 2.895,
+        "max_drawdown_pct": 2.01
+      }
+    ]
+  },
+  "cross_pair_4h_validation": {
+    "symbols": [
+      "EURUSD=X",
+      "GBPUSD=X",
+      "AUDUSD=X",
+      "NZDUSD=X"
+    ],
+    "timeframe": "4h",
+    "aggregate": {
+      "net_profit_eur": 300.46,
+      "average_return_pct": 7.51,
+      "trades": 331,
+      "profitable_pairs": 3,
+      "tested_pairs": 4
+    },
+    "pairs": [
+      {
+        "symbol": "EURUSD=X",
+        "net_profit_eur": 227.27,
+        "return_pct": 22.73,
+        "trades": 100,
+        "win_rate_pct": 74.0,
+        "profit_factor": 1.77,
+        "max_drawdown_pct": 5.15
+      },
+      {
+        "symbol": "AUDUSD=X",
+        "net_profit_eur": 62.36,
+        "return_pct": 6.24,
+        "trades": 78,
+        "win_rate_pct": 71.79,
+        "profit_factor": 1.266,
+        "max_drawdown_pct": 3.89
+      },
+      {
+        "symbol": "GBPUSD=X",
+        "net_profit_eur": 26.79,
+        "return_pct": 2.68,
+        "trades": 89,
+        "win_rate_pct": 62.92,
+        "profit_factor": 1.079,
+        "max_drawdown_pct": 6.86
+      },
+      {
+        "symbol": "NZDUSD=X",
+        "net_profit_eur": -15.96,
+        "return_pct": -1.6,
+        "trades": 64,
+        "win_rate_pct": 65.62,
+        "profit_factor": 0.931,
+        "max_drawdown_pct": 10.64
+      }
+    ]
+  },
+  "recommendation": [
+    "Prefer the EUR/USD 4h breakout-pullback variant over the earlier EUR/USD 1h variant.",
+    "Do not include NZD/USD 4h with these parameters unless further validation improves it.",
+    "The strategy is lower-frequency, around one trade per trading day per 4h chart, and should be forward-tested on a demo account before live use.",
+    "The result is still a backtest, not a profit guarantee."
+  ]
+}
