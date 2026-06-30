@@ -1,0 +1,109 @@
+{
+  "conclusion": "The tested real-data searches did not find a profitable strategy that reaches 20 trades per day with a 90% win rate.",
+  "generated_at": "2026-06-30T10:43:47.827559+00:00",
+  "target": {
+    "daily_trades": 20,
+    "win_rate_pct": 90
+  },
+  "tested_approach": {
+    "objective": "high-frequency",
+    "strategy_modes": [
+      "hf_reversion",
+      "hf_momentum",
+      "hf_micro"
+    ],
+    "risk_per_trade": 0.005,
+    "initial_capital_eur": 1000,
+    "spread_pips": 0.8,
+    "slippage_pips": 0.1
+  },
+  "runs": [
+    {
+      "name": "5m high-frequency search",
+      "symbols": [
+        "EURUSD=X",
+        "GBPUSD=X"
+      ],
+      "timeframes": [
+        "5m"
+      ],
+      "evaluated_candidates": 25,
+      "best_aggregate_metrics": {
+        "average_daily_win_rate_pct": 78.38,
+        "average_drawdown_pct": 1.69,
+        "average_high_frequency_day_ratio": 0.0,
+        "average_profit_factor": 1.21,
+        "average_return_pct": 1.52,
+        "average_win_rate_pct": 81.9,
+        "estimated_robot_daily_trades": 3.4,
+        "profitable_market_ratio": 1.0,
+        "total_net_profit_eur": 30.29,
+        "total_trades": 155
+      },
+      "result": "Profitable in this sample, but far below 20 trades/day and below 90% win rate."
+    },
+    {
+      "name": "5m micro-scalping search",
+      "symbols": [
+        "EURUSD=X",
+        "GBPUSD=X"
+      ],
+      "timeframes": [
+        "5m"
+      ],
+      "evaluated_candidates": 40,
+      "best_aggregate_metrics": {
+        "average_daily_win_rate_pct": 69.75,
+        "average_drawdown_pct": 5.48,
+        "average_high_frequency_day_ratio": 0.0,
+        "average_profit_factor": 0.835,
+        "average_return_pct": -3.08,
+        "average_win_rate_pct": 69.82,
+        "estimated_robot_daily_trades": 4.4,
+        "profitable_market_ratio": 0.0,
+        "total_net_profit_eur": -61.49,
+        "total_trades": 222
+      },
+      "result": "More aggressive parameters increased trade count slightly but made the strategy unprofitable."
+    },
+    {
+      "name": "1m plus 5m high-frequency search",
+      "symbols": [
+        "EURUSD=X",
+        "GBPUSD=X"
+      ],
+      "timeframes": [
+        "1m",
+        "5m"
+      ],
+      "evaluated_candidates": 30,
+      "best_aggregate_metrics": {
+        "average_daily_win_rate_pct": 32.66,
+        "average_drawdown_pct": 6.54,
+        "average_high_frequency_day_ratio": 0.0,
+        "average_profit_factor": 0.472,
+        "average_return_pct": -2.13,
+        "average_win_rate_pct": 32.2,
+        "estimated_robot_daily_trades": 13.95,
+        "profitable_market_ratio": 0.0,
+        "total_net_profit_eur": -85.03,
+        "total_trades": 837
+      },
+      "result": "Trade frequency improved but win rate and profitability collapsed."
+    }
+  ],
+  "best_safe_candidate": {
+    "source_run": "5m high-frequency search",
+    "reason": "It was the only tested high-frequency candidate that stayed profitable after spread, slippage, and commission.",
+    "limitations": [
+      "Estimated robot frequency was only 3.4 trades/day.",
+      "Win rate was 81.9%, not 90%.",
+      "No tested day met the 20 trades and 90% daily win-rate target."
+    ]
+  },
+  "notes": [
+    "A 90% win rate with at least 20 daily forex trades is an extreme target and usually indicates either overfitting, tiny take-profits versus large stop losses, or ignored execution costs.",
+    "The code now measures the target explicitly instead of assuming it is achievable.",
+    "Broker-grade tick data, walk-forward testing, and demo execution are required before live trading."
+  ]
+}

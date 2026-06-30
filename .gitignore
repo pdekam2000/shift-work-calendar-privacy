@@ -6,3 +6,4 @@ data/cache/
 *.egg-info/
 results/*
 !results/backtest_summary.json
+!results/high_frequency_summary.json
