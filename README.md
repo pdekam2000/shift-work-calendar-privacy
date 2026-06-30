@@ -49,6 +49,24 @@ Outputs:
 - `results/best_backtests.json` - detailed result for the best set
 - `results/best_trades.csv` - trade list for inspection
 
+## Search for high-frequency targets
+
+For aggressive scalping research, use the high-frequency objective. It scores
+candidates against daily trade count and win-rate targets, but it will report
+when real data does not satisfy the target.
+
+```bash
+forex-robot optimize \
+  --symbols EURUSD=X GBPUSD=X \
+  --timeframes 1m 5m \
+  --objective high-frequency \
+  --target-daily-trades 20 \
+  --target-win-rate 90 \
+  --risk-per-trade 0.005 \
+  --evaluations 100 \
+  --output-dir results/high_frequency
+```
+
 ## Backtest one parameter set
 
 ```bash
