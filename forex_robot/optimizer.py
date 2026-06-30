@@ -34,7 +34,7 @@ PARAMETER_SPACE = {
 }
 
 HIGH_FREQUENCY_PARAMETER_SPACE = {
-    "signal_mode": ["hf_reversion", "hf_momentum"],
+    "signal_mode": ["hf_reversion", "hf_momentum", "hf_micro"],
     "fast_ema": [5, 8, 13, 20],
     "slow_ema": [21, 34, 55, 80],
     "rsi_period": [5, 7, 10, 14],
@@ -47,10 +47,11 @@ HIGH_FREQUENCY_PARAMETER_SPACE = {
     "tp2_r": [0.4, 0.6, 0.8, 1.0],
     "tp3_r": [0.9, 1.2, 1.6, 2.2],
     "trailing_atr": [0.5, 0.8, 1.2],
-    "rsi_long_max": [38.0, 42.0, 46.0, 50.0],
-    "rsi_short_min": [50.0, 54.0, 58.0, 62.0],
+    "rsi_long_max": [38.0, 45.0, 50.0, 55.0, 60.0],
+    "rsi_short_min": [40.0, 45.0, 50.0, 55.0, 62.0],
     "min_slope_atr": [0.0, 0.01, 0.03],
     "session": [(0, 24), (6, 20), (7, 17), (12, 20)],
+    "max_hold_bars": [0, 3, 6, 12],
 }
 
 

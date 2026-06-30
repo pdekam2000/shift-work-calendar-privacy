@@ -36,6 +36,7 @@ class StrategyParams:
     session_start_hour: int = 6
     session_end_hour: int = 20
     signal_mode: str = "pullback"
+    max_hold_bars: int = 0
 
     def to_dict(self) -> dict[str, float | int | str]:
         return asdict(self)
@@ -54,8 +55,10 @@ def build_signals(frame: pd.DataFrame, params: StrategyParams) -> pd.DataFrame:
         raise ValueError("Session hours must be within the 0-24 range.")
     if params.tp1_r <= 0 or params.tp2_r <= params.tp1_r or params.tp3_r <= params.tp2_r:
         raise ValueError("Take-profit R multiples must be positive and increasing.")
-    if params.signal_mode not in {"pullback", "hf_reversion", "hf_momentum"}:
-        raise ValueError("signal_mode must be pullback, hf_reversion, or hf_momentum.")
+    if params.signal_mode not in {"pullback", "hf_reversion", "hf_momentum", "hf_micro"}:
+        raise ValueError("signal_mode must be pullback, hf_reversion, hf_momentum, or hf_micro.")
+    if params.max_hold_bars < 0:
+        raise ValueError("max_hold_bars cannot be negative.")
 
     data = frame.copy()
     data["ema_fast"] = ema(data["close"], params.fast_ema)
@@ -112,8 +115,26 @@ def build_signals(frame: pd.DataFrame, params: StrategyParams) -> pd.DataFrame:
     else:
         mild_uptrend = (data["ema_fast"] >= data["ema_slow"]) & (data["slope_atr"] >= -params.min_slope_atr)
         mild_downtrend = (data["ema_fast"] <= data["ema_slow"]) & (data["slope_atr"] <= params.min_slope_atr)
-        long_signal = mild_uptrend & long_recovery & long_break
-        short_signal = mild_downtrend & short_recovery & short_break
+        if params.signal_mode == "hf_momentum":
+            long_signal = mild_uptrend & long_recovery & long_break
+            short_signal = mild_downtrend & short_recovery & short_break
+        else:
+            candle_range = (data["high"] - data["low"]).abs()
+            enough_range = candle_range >= params.breakout_atr * data["atr"]
+            long_signal = (
+                mild_uptrend
+                & enough_range
+                & (data["close"] > data["open"])
+                & (data["close"] > data["ema_fast"])
+                & (data["rsi"] >= params.rsi_long_max)
+            )
+            short_signal = (
+                mild_downtrend
+                & enough_range
+                & (data["close"] < data["open"])
+                & (data["close"] < data["ema_fast"])
+                & (data["rsi"] <= params.rsi_short_min)
+            )
 
     data["signal"] = 0
     data.loc[in_session & long_signal, "signal"] = 1
@@ -123,4 +144,5 @@ def build_signals(frame: pd.DataFrame, params: StrategyParams) -> pd.DataFrame:
     data["tp2_distance"] = params.tp2_r * data["stop_distance"]
     data["tp3_distance"] = params.tp3_r * data["stop_distance"]
     data["trailing_distance"] = params.trailing_atr * data["atr"]
+    data["max_hold_bars"] = params.max_hold_bars
     return data.dropna(subset=["ema_fast", "ema_slow", "atr", "slope_atr"])

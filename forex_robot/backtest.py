@@ -69,7 +69,9 @@ class _OpenPosition:
     units: float
     remaining_units: float
     risk_amount: float
+    max_hold_bars: int
     hit_targets: int = 0
+    bars_held: int = 0
     realized_pnl: float = 0.0
     partial_exits: list[dict[str, float | str]] = field(default_factory=list)
 
@@ -193,6 +195,7 @@ class Backtester:
             units=units,
             remaining_units=units,
             risk_amount=risk_amount,
+            max_hold_bars=int(row.get("max_hold_bars", 0)),
         )
 
     def _process_bar(
@@ -205,6 +208,7 @@ class Backtester:
         high = float(row["high"])
         low = float(row["low"])
         close = float(row["close"])
+        position.bars_held += 1
 
         if position.direction == 1 and low <= position.stop_price:
             return self._close_position(position, timestamp, position.stop_price, conversion_rate, "stop_loss")
@@ -241,6 +245,8 @@ class Backtester:
                 position.stop_price = max(position.stop_price, close - position.trailing_distance)
             else:
                 position.stop_price = min(position.stop_price, close + position.trailing_distance)
+        if position.max_hold_bars > 0 and position.bars_held >= position.max_hold_bars:
+            return self._close_position(position, timestamp, close, conversion_rate, "time_stop")
         return None
 
     def _close_position(
