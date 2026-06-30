@@ -7,3 +7,4 @@ data/cache/
 results/*
 !results/backtest_summary.json
 !results/high_frequency_summary.json
+!results/extended_validation_summary.json

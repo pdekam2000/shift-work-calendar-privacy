@@ -1,0 +1,178 @@
+{
+  "conclusion": "The previously found profitable samples did not remain broadly profitable after testing more pairs and longer/more varied datasets.",
+  "generated_at": "2026-06-30T11:36:00+00:00",
+  "tests": [
+    {
+      "name": "High-frequency 5m search on four USD-quoted majors",
+      "symbols": [
+        "EURUSD=X",
+        "GBPUSD=X",
+        "AUDUSD=X",
+        "NZDUSD=X"
+      ],
+      "timeframes": [
+        "5m"
+      ],
+      "evaluated_candidates": 40,
+      "account": {
+        "initial_capital_eur": 1000,
+        "risk_per_trade": 0.005,
+        "spread_pips": 0.8,
+        "slippage_pips": 0.1
+      },
+      "best_aggregate_metrics": {
+        "average_daily_win_rate_pct": 68.03,
+        "average_drawdown_pct": 6.16,
+        "average_profit_factor": 0.803,
+        "average_return_pct": -4.12,
+        "average_win_rate_pct": 69.28,
+        "estimated_robot_daily_trades": 9.33,
+        "profitable_market_ratio": 0.0,
+        "total_net_profit_eur": -164.6,
+        "total_trades": 503
+      },
+      "top_candidate_market_metrics": [
+        {
+          "symbol": "EURUSD=X",
+          "timeframe": "5m",
+          "net_profit_eur": -13.26,
+          "return_pct": -1.33,
+          "trades": 90,
+          "win_rate_pct": 72.22,
+          "profit_factor": 0.894,
+          "max_drawdown_pct": 4.51,
+          "average_daily_trades": 1.96
+        },
+        {
+          "symbol": "GBPUSD=X",
+          "timeframe": "5m",
+          "net_profit_eur": -48.23,
+          "return_pct": -4.82,
+          "trades": 132,
+          "win_rate_pct": 67.42,
+          "profit_factor": 0.776,
+          "max_drawdown_pct": 6.46,
+          "average_daily_trades": 2.44
+        },
+        {
+          "symbol": "AUDUSD=X",
+          "timeframe": "5m",
+          "net_profit_eur": -63.09,
+          "return_pct": -6.31,
+          "trades": 144,
+          "win_rate_pct": 66.67,
+          "profit_factor": 0.74,
+          "max_drawdown_pct": 7.2,
+          "average_daily_trades": 2.48
+        },
+        {
+          "symbol": "NZDUSD=X",
+          "timeframe": "5m",
+          "net_profit_eur": -40.02,
+          "return_pct": -4.0,
+          "trades": 137,
+          "win_rate_pct": 70.8,
+          "profit_factor": 0.802,
+          "max_drawdown_pct": 6.46,
+          "average_daily_trades": 2.45
+        }
+      ],
+      "result": "The high-frequency direction did not validate on the broader four-pair test."
+    },
+    {
+      "name": "Balanced strategy validation on four pairs and 15m/1h/4h",
+      "symbols": [
+        "EURUSD=X",
+        "GBPUSD=X",
+        "AUDUSD=X",
+        "NZDUSD=X"
+      ],
+      "timeframes": [
+        "15m",
+        "1h",
+        "4h"
+      ],
+      "account": {
+        "initial_capital_eur": 1000,
+        "risk_per_trade": 0.01,
+        "spread_pips": 0.8,
+        "slippage_pips": 0.1
+      },
+      "aggregate_metrics": {
+        "total_net_profit_eur": -65.05,
+        "average_return_pct": -0.54,
+        "total_trades": 1175,
+        "profitable_market_timeframes": 6,
+        "tested_market_timeframes": 12
+      },
+      "profitable_market_timeframes": [
+        {
+          "symbol": "EURUSD=X",
+          "timeframe": "1h",
+          "net_profit_eur": 162.28,
+          "return_pct": 16.23,
+          "trades": 212,
+          "win_rate_pct": 57.08,
+          "profit_factor": 1.163,
+          "max_drawdown_pct": 11.18
+        },
+        {
+          "symbol": "NZDUSD=X",
+          "timeframe": "15m",
+          "net_profit_eur": 63.52,
+          "return_pct": 6.35,
+          "trades": 60,
+          "win_rate_pct": 60.0,
+          "profit_factor": 1.245,
+          "max_drawdown_pct": 5.07
+        },
+        {
+          "symbol": "EURUSD=X",
+          "timeframe": "4h",
+          "net_profit_eur": 51.91,
+          "return_pct": 5.19,
+          "trades": 37,
+          "win_rate_pct": 56.76,
+          "profit_factor": 1.332,
+          "max_drawdown_pct": 4.68
+        },
+        {
+          "symbol": "GBPUSD=X",
+          "timeframe": "15m",
+          "net_profit_eur": 39.59,
+          "return_pct": 3.96,
+          "trades": 52,
+          "win_rate_pct": 53.85,
+          "profit_factor": 1.16,
+          "max_drawdown_pct": 5.18
+        },
+        {
+          "symbol": "EURUSD=X",
+          "timeframe": "15m",
+          "net_profit_eur": 19.76,
+          "return_pct": 1.98,
+          "trades": 53,
+          "win_rate_pct": 58.49,
+          "profit_factor": 1.089,
+          "max_drawdown_pct": 6.73
+        },
+        {
+          "symbol": "AUDUSD=X",
+          "timeframe": "1h",
+          "net_profit_eur": 19.05,
+          "return_pct": 1.9,
+          "trades": 173,
+          "win_rate_pct": 54.34,
+          "profit_factor": 1.025,
+          "max_drawdown_pct": 15.74
+        }
+      ],
+      "result": "Some individual market/timeframe combinations were profitable, but the full expanded basket was not."
+    }
+  ],
+  "recommendation": [
+    "Do not deploy the high-frequency version as a broad multi-pair robot based on these tests.",
+    "If continuing research, focus on walk-forward validation for the individually profitable market/timeframe combinations instead of trading every pair.",
+    "Use broker-grade tick data before trusting any 5m scalping result."
+  ]
+}
