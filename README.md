@@ -98,5 +98,13 @@ The latest focused summary is:
 results/focused_final_package_summary.json
 ```
 
+An experimental M1 scalping research preset is also included, but recent tests
+did not find it profitable after costs:
+
+```text
+docs/M1_SCALPING_RESEARCH_FA.md
+packages/forex_m1_scalping_research_package.zip
+```
+
 A real full-auto robot still needs broker-specific validation, order execution
 monitoring, news filters, VPS monitoring, and kill-switch controls.

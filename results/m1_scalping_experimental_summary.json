@@ -1,0 +1,100 @@
+{
+  "conclusion": "A profitable M1 scalping robot was not found in the recent real-data tests. The included M1 preset is for demo and Strategy Tester research only.",
+  "generated_at": "2026-07-01T04:58:00+00:00",
+  "recommended_for_live": false,
+  "timeframe": "M1",
+  "tests": [
+    {
+      "name": "M1 high-frequency search with realistic costs",
+      "symbols": [
+        "EURUSD=X",
+        "AUDUSD=X",
+        "GBPUSD=X",
+        "NZDUSD=X"
+      ],
+      "cost_assumptions": {
+        "spread_pips": 0.8,
+        "slippage_pips": 0.1,
+        "initial_capital_eur": 100,
+        "risk_per_trade": 0.005
+      },
+      "best_aggregate_metrics": {
+        "net_profit_eur": -9.32,
+        "trades": 92,
+        "estimated_daily_trades": 15.68,
+        "average_win_rate_pct": 42.26,
+        "average_profit_factor": 0.32,
+        "average_drawdown_pct": 2.48
+      }
+    },
+    {
+      "name": "M1 high-frequency search with raw-spread assumption",
+      "symbols": [
+        "EURUSD=X",
+        "AUDUSD=X",
+        "GBPUSD=X",
+        "NZDUSD=X"
+      ],
+      "cost_assumptions": {
+        "spread_pips": 0.2,
+        "slippage_pips": 0.03,
+        "initial_capital_eur": 100,
+        "risk_per_trade": 0.005
+      },
+      "best_aggregate_metrics": {
+        "net_profit_eur": -10.84,
+        "trades": 275,
+        "estimated_daily_trades": 41.15,
+        "average_win_rate_pct": 59.55,
+        "average_profit_factor": 0.716,
+        "average_drawdown_pct": 4.48
+      }
+    },
+    {
+      "name": "Profit-focused scan by individual pair",
+      "cost_assumptions": {
+        "spread_pips": 0.8,
+        "slippage_pips": 0.1,
+        "initial_capital_eur": 100,
+        "risk_per_trade": 0.005
+      },
+      "best_pair_results": [
+        {
+          "symbol": "EURUSD=X",
+          "net_profit_eur": -0.72,
+          "trades": 25,
+          "win_rate_pct": 32.0,
+          "profit_factor": 0.743
+        },
+        {
+          "symbol": "AUDUSD=X",
+          "net_profit_eur": -0.64,
+          "trades": 10,
+          "win_rate_pct": 60.0,
+          "profit_factor": 0.64
+        },
+        {
+          "symbol": "GBPUSD=X",
+          "net_profit_eur": -0.42,
+          "trades": 40,
+          "win_rate_pct": 47.5,
+          "profit_factor": 0.92
+        },
+        {
+          "symbol": "NZDUSD=X",
+          "net_profit_eur": -0.09,
+          "trades": 18,
+          "win_rate_pct": 55.56,
+          "profit_factor": 0.969
+        }
+      ]
+    }
+  ],
+  "download_package": "packages/forex_m1_scalping_research_package.zip",
+  "included_preset": "mt5/Presets/M1_Scalping_Experimental_NOT_RECOMMENDED_FOR_LIVE.set",
+  "notes": [
+    "M1 scalping is extremely sensitive to spread, slippage, and broker execution.",
+    "Do not run this preset live based on the current tests.",
+    "Use the H4 package as the current best candidate; use M1 only for further demo research."
+  ]
+}

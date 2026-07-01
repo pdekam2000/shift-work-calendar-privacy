@@ -18,6 +18,8 @@ input int    InpAtrPeriod          = 21;
 input int    InpAdxPeriod          = 21;
 input int    InpSlopePeriod        = 20;
 input int    InpBreakoutLookback   = 5;
+input string InpSignalMode         = "pullback";
+input int    InpMaxHoldBars        = 0;
 input double InpPullbackAtr        = 0.45;
 input double InpBreakoutAtr        = 0.03;
 input double InpMinBodyAtr         = 0.10;
@@ -263,6 +265,7 @@ void SavePositionState(const double entry, const double stopDistance, const bool
    GlobalVariableSet(StateKey("initial_volume"), volume);
    GlobalVariableSet(StateKey("hit1"), 0.0);
    GlobalVariableSet(StateKey("hit2"), 0.0);
+   GlobalVariableSet(StateKey("entry_time"), (double)iTime(_Symbol, _Period, 0));
 }
 
 void ManageOpenPosition()
@@ -291,6 +294,7 @@ void ManageOpenPosition()
    double initialVolume = GlobalVariableGet(StateKey("initial_volume"));
    double hit1 = GlobalVariableGet(StateKey("hit1"));
    double hit2 = GlobalVariableGet(StateKey("hit2"));
+   datetime entryBarTime = (datetime)GlobalVariableGet(StateKey("entry_time"));
 
    if(hit1 < 0.5 && direction * (price - tp1) >= 0.0)
    {
@@ -325,6 +329,13 @@ void ManageOpenPosition()
       if(shouldMove)
          trade.PositionModify(_Symbol, NormalizeDouble(newStop, _Digits), takeProfit);
    }
+
+   if(InpMaxHoldBars > 0 && entryBarTime > 0)
+   {
+      int entryShift = iBarShift(_Symbol, _Period, entryBarTime, false);
+      if(entryShift >= InpMaxHoldBars)
+         trade.PositionClose(_Symbol);
+   }
 }
 
 void EvaluateEntry()
@@ -354,6 +365,7 @@ void EvaluateEntry()
    double high = iHigh(_Symbol, _Period, shift);
    double low = iLow(_Symbol, _Period, shift);
    double close = iClose(_Symbol, _Period, shift);
+   double previousClose = iClose(_Symbol, _Period, shift + 1);
    double slopeAtr = RollingSlope(shift) / MathMax(atrValue, _Point);
    double bodyAtr = MathAbs(close - open) / MathMax(atrValue, _Point);
 
@@ -366,6 +378,39 @@ void EvaluateEntry()
    bool shortRecovery = prevRsi >= InpRsiShortMin && rsiValue < prevRsi;
    bool longBreak = close >= RecentHigh(shift) + InpBreakoutAtr * atrValue;
    bool shortBreak = close <= RecentLow(shift) - InpBreakoutAtr * atrValue;
+   bool mildUptrend = emaFast >= emaSlow && slopeAtr >= -InpMinSlopeAtr;
+   bool mildDowntrend = emaFast <= emaSlow && slopeAtr <= InpMinSlopeAtr;
+   double candleRange = MathAbs(high - low);
+   bool enoughRange = candleRange >= InpBreakoutAtr * atrValue;
+   bool longSignal = false;
+   bool shortSignal = false;
+
+   if(InpSignalMode == "pullback")
+   {
+      longSignal = uptrend && longPullback && longRecovery && longBreak && breakoutQuality;
+      shortSignal = downtrend && shortPullback && shortRecovery && shortBreak && breakoutQuality;
+   }
+   else if(InpSignalMode == "hf_momentum")
+   {
+      longSignal = mildUptrend && longRecovery && longBreak && breakoutQuality;
+      shortSignal = mildDowntrend && shortRecovery && shortBreak && breakoutQuality;
+   }
+   else if(InpSignalMode == "hf_micro")
+   {
+      longSignal = mildUptrend && breakoutQuality && enoughRange && close > previousClose && close > emaFast && rsiValue >= InpRsiLongMax;
+      shortSignal = mildDowntrend && breakoutQuality && enoughRange && close < previousClose && close < emaFast && rsiValue <= InpRsiShortMin;
+   }
+   else if(InpSignalMode == "hf_reversion")
+   {
+      double trendBuffer = InpPullbackAtr * atrValue;
+      longSignal = close >= emaSlow - trendBuffer && low <= emaFast - InpPullbackAtr * atrValue && rsiValue <= InpRsiLongMax && close > open;
+      shortSignal = close <= emaSlow + trendBuffer && high >= emaFast + InpPullbackAtr * atrValue && rsiValue >= InpRsiShortMin && close < open;
+   }
+   else
+   {
+      Print("Unsupported InpSignalMode: ", InpSignalMode);
+      return;
+   }
 
    double stopDistance = InpStopAtr * atrValue;
    double volume = RiskVolume(stopDistance);
@@ -375,14 +420,14 @@ void EvaluateEntry()
    trade.SetExpertMagicNumber(InpMagicNumber);
    trade.SetDeviationInPoints(20);
 
-   if(InpAllowLong && uptrend && longPullback && longRecovery && longBreak && breakoutQuality)
+   if(InpAllowLong && longSignal)
    {
       double entry = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
       double stopLoss = NormalizeDouble(entry - stopDistance, _Digits);
       if(trade.Buy(volume, _Symbol, entry, stopLoss, 0.0, "FBP long"))
          SavePositionState(entry, stopDistance, true, volume);
    }
-   else if(InpAllowShort && downtrend && shortPullback && shortRecovery && shortBreak && breakoutQuality)
+   else if(InpAllowShort && shortSignal)
    {
       double entry = SymbolInfoDouble(_Symbol, SYMBOL_BID);
       double stopLoss = NormalizeDouble(entry + stopDistance, _Digits);

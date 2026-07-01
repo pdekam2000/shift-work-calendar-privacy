@@ -18,6 +18,13 @@
 - `results/focused_final_package_summary.json`
   - خلاصه نتیجه نهایی بک تست و walk-forward
 
+- `mt5/Presets/M1_Scalping_Experimental_NOT_RECOMMENDED_FOR_LIVE.set`
+  - preset آزمایشی برای اسکالپ 1 دقیقه ای
+  - طبق تست فعلی برای Live توصیه نمی شود
+
+- `docs/M1_SCALPING_RESEARCH_FA.md`
+  - توضیح نتیجه تست M1 و روش تست دمو
+
 - `forex_robot/`
   - کد Python برای بک تست و بهینه سازی
 

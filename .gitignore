@@ -10,3 +10,4 @@ results/*
 !results/extended_validation_summary.json
 !results/focused_breakout_optimization_summary.json
 !results/focused_final_package_summary.json
+!results/m1_scalping_experimental_summary.json
