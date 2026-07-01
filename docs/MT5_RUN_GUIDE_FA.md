@@ -93,6 +93,50 @@
 اگر نخواستی پنل دیده شود، در Inputs مقدار `InpShowChartPanel` را `false` کن.
 اگر متن وضعیت را خواستی تغییر بدهی، مقدار `InpPanelStatusText` را عوض کن.
 
+## لاگ عیب یابی اگر معامله باز نمی شود
+
+برای اینکه بفهمی چرا ربات معامله باز نمی کند:
+
+1. در Inputs مقدار `InpEnableDiagnostics` را `true` بگذار.
+2. ربات را روی چارت یا Strategy Tester اجرا کن.
+3. در MT5 پایین صفحه تب های زیر را ببین:
+   - `Experts`
+   - `Journal`
+4. پیام هایی که با `[FBP_DIAG]` شروع می شوند را بررسی کن.
+
+لاگ ها این موارد را نشان می دهند:
+
+- Tick received
+- Timeframe check passed/failed
+- New-bar gate passed/failed
+- Max positions check
+- Session filter
+- Spread filter
+- News filter status
+- Cooldown timer status
+- Indicator data check
+- Trend check
+- ADX/body quality check
+- RSI threshold check
+- Breakout/pullback check
+- Signal generated yes/no
+- Order attempt yes/no
+- OrderSend result and retcode
+
+### تست اجباری فقط برای Demo
+
+اگر می خواهی مطمئن شوی مشکل از اجازه معامله/بروکر نیست:
+
+1. فقط روی حساب Demo استفاده کن.
+2. در Inputs بگذار:
+   - `ForceTestTrade = true`
+3. ربات بعد از initialization، روی اولین tick مناسب فقط یک سفارش market با حجم دقیق `0.01 lot` تلاش می کند باز کند.
+4. اگر حساب Demo نباشد، هیچ معامله ای باز نمی کند و در لاگ می نویسد blocked.
+5. اگر بروکر حجم دقیق `0.01` را اجازه ندهد، معامله باز نمی کند و در لاگ دلیل را می نویسد.
+6. اگر سفارش با موفقیت باز شد، ForceTestTrade به صورت داخلی دیگر تکرار نمی شود.
+
+بعد از تست، دوباره `ForceTestTrade = false` کن.
+
 ## پیشنهاد تنظیم ریسک
 
 برای شروع:

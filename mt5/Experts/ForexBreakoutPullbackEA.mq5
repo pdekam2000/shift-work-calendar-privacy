@@ -40,6 +40,8 @@ input bool   InpAllowShort         = true;
 input bool   InpShowChartPanel     = true;
 input string InpOwnerName          = "pedram kamangar";
 input string InpPanelStatusText    = "Robot is active and monitoring the strategy.";
+input bool   InpEnableDiagnostics  = true;
+input bool   ForceTestTrade        = false;
 
 CTrade trade;
 int fastEmaHandle;
@@ -49,6 +51,35 @@ int atrHandle;
 int adxHandle;
 datetime lastBarTime = 0;
 string panelPrefix = "FBP_PANEL_";
+bool forceTestTradeDone = false;
+
+void Diag(const string message)
+{
+   if(InpEnableDiagnostics)
+      Print("[FBP_DIAG] ", message);
+}
+
+string PassFail(const bool passed)
+{
+   return passed ? "PASSED" : "FAILED";
+}
+
+string YesNo(const bool value)
+{
+   return value ? "yes" : "no";
+}
+
+string TradeModeText()
+{
+   long mode = AccountInfoInteger(ACCOUNT_TRADE_MODE);
+   if(mode == ACCOUNT_TRADE_MODE_DEMO)
+      return "DEMO";
+   if(mode == ACCOUNT_TRADE_MODE_CONTEST)
+      return "CONTEST";
+   if(mode == ACCOUNT_TRADE_MODE_REAL)
+      return "REAL";
+   return "UNKNOWN";
+}
 
 string StateKey(const string suffix)
 {
@@ -170,6 +201,59 @@ bool HasPosition()
    return false;
 }
 
+void TryForceTestTrade()
+{
+   if(!ForceTestTrade || forceTestTradeDone)
+      return;
+
+   long mode = AccountInfoInteger(ACCOUNT_TRADE_MODE);
+   bool isDemo = mode == ACCOUNT_TRADE_MODE_DEMO;
+   Diag(StringFormat("ForceTestTrade gate: enabled=yes account_mode=%s demo_required=%s", TradeModeText(), PassFail(isDemo)));
+   if(!isDemo)
+   {
+      Diag("ForceTestTrade blocked: account is not DEMO. No diagnostic order will be sent.");
+      forceTestTradeDone = true;
+      return;
+   }
+
+   bool alreadyHasPosition = HasPosition();
+   Diag(StringFormat("ForceTestTrade max-position gate: existing_position=%s", YesNo(alreadyHasPosition)));
+   if(alreadyHasPosition)
+      return;
+
+   double requestedVolume = 0.01;
+   double volume = NormalizeVolume(requestedVolume);
+   if(volume <= 0.0 || MathAbs(volume - requestedVolume) > 0.0000001)
+   {
+      Diag(StringFormat(
+         "ForceTestTrade blocked: broker volume rules do not allow exactly 0.01 lot. requested=%.2f normalized=%.2f min=%.2f step=%.2f",
+         requestedVolume,
+         volume,
+         SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN),
+         SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP)
+      ));
+      return;
+   }
+
+   trade.SetExpertMagicNumber(InpMagicNumber);
+   trade.SetDeviationInPoints(20);
+   Diag(StringFormat("ForceTestTrade order attempt: yes side=BUY volume=%.2f symbol=%s", volume, _Symbol));
+   bool sent = trade.Buy(volume, _Symbol, 0.0, 0.0, 0.0, "FBP ForceTestTrade demo diagnostic");
+   Diag(StringFormat(
+      "ForceTestTrade OrderSend result: sent=%s retcode=%u retcode_description=%s deal=%I64u order=%I64u",
+      YesNo(sent),
+      trade.ResultRetcode(),
+      trade.ResultRetcodeDescription(),
+      trade.ResultDeal(),
+      trade.ResultOrder()
+   ));
+   if(sent)
+   {
+      forceTestTradeDone = true;
+      Diag("ForceTestTrade disabled automatically after one successful DEMO diagnostic order.");
+   }
+}
+
 void DeleteChartPanel()
 {
    int total = ObjectsTotal(0, 0, -1);
@@ -271,11 +355,17 @@ void SavePositionState(const double entry, const double stopDistance, const bool
 void ManageOpenPosition()
 {
    if(!HasPosition())
+   {
+      Diag("Position management: no existing position for this symbol/magic.");
       return;
+   }
 
    double atrValue;
    if(!CopyOne(atrHandle, 0, 1, atrValue))
+   {
+      Diag("Position management: ATR data unavailable, skipping management tick.");
       return;
+   }
 
    long type = PositionGetInteger(POSITION_TYPE);
    double volume = PositionGetDouble(POSITION_VOLUME);
@@ -299,9 +389,12 @@ void ManageOpenPosition()
    if(hit1 < 0.5 && direction * (price - tp1) >= 0.0)
    {
       double closeVolume = NormalizeVolume(initialVolume / 3.0);
+      Diag(StringFormat("Position management: TP1 reached. partial_close_attempt=%s close_volume=%.2f", YesNo(closeVolume > 0.0 && closeVolume < volume), closeVolume));
       if(closeVolume > 0.0 && closeVolume < volume)
          trade.PositionClosePartial(_Symbol, closeVolume);
+      Diag(StringFormat("PositionClosePartial TP1 retcode=%u description=%s", trade.ResultRetcode(), trade.ResultRetcodeDescription()));
       trade.PositionModify(_Symbol, openPrice, takeProfit);
+      Diag(StringFormat("Breakeven modify after TP1 retcode=%u description=%s", trade.ResultRetcode(), trade.ResultRetcodeDescription()));
       GlobalVariableSet(StateKey("hit1"), 1.0);
       return;
    }
@@ -309,15 +402,19 @@ void ManageOpenPosition()
    if(hit2 < 0.5 && direction * (price - tp2) >= 0.0)
    {
       double closeVolume = NormalizeVolume(initialVolume / 3.0);
+      Diag(StringFormat("Position management: TP2 reached. partial_close_attempt=%s close_volume=%.2f", YesNo(closeVolume > 0.0 && closeVolume < volume), closeVolume));
       if(closeVolume > 0.0 && closeVolume < volume)
          trade.PositionClosePartial(_Symbol, closeVolume);
+      Diag(StringFormat("PositionClosePartial TP2 retcode=%u description=%s", trade.ResultRetcode(), trade.ResultRetcodeDescription()));
       GlobalVariableSet(StateKey("hit2"), 1.0);
       return;
    }
 
    if(direction * (price - tp3) >= 0.0)
    {
+      Diag("Position management: TP3 reached, closing remaining position.");
       trade.PositionClose(_Symbol);
+      Diag(StringFormat("PositionClose TP3 retcode=%u description=%s", trade.ResultRetcode(), trade.ResultRetcodeDescription()));
       return;
    }
 
@@ -327,38 +424,73 @@ void ManageOpenPosition()
       double newStop = isBuy ? price - trailDistance : price + trailDistance;
       bool shouldMove = (isBuy && newStop > stopLoss) || (!isBuy && (stopLoss == 0.0 || newStop < stopLoss));
       if(shouldMove)
+      {
+         Diag(StringFormat("Position management: trailing stop update attempt new_stop=%.5f old_stop=%.5f", newStop, stopLoss));
          trade.PositionModify(_Symbol, NormalizeDouble(newStop, _Digits), takeProfit);
+         Diag(StringFormat("Trailing stop modify retcode=%u description=%s", trade.ResultRetcode(), trade.ResultRetcodeDescription()));
+      }
    }
 
    if(InpMaxHoldBars > 0 && entryBarTime > 0)
    {
       int entryShift = iBarShift(_Symbol, _Period, entryBarTime, false);
       if(entryShift >= InpMaxHoldBars)
+      {
+         Diag(StringFormat("Position management: max-hold bars reached entry_shift=%d max_hold_bars=%d, closing position.", entryShift, InpMaxHoldBars));
          trade.PositionClose(_Symbol);
+         Diag(StringFormat("PositionClose time-stop retcode=%u description=%s", trade.ResultRetcode(), trade.ResultRetcodeDescription()));
+      }
    }
 }
 
 void EvaluateEntry()
 {
-   if(HasPosition())
+   Diag("EvaluateEntry started.");
+
+   bool existingPosition = HasPosition();
+   Diag(StringFormat("Max positions check: %s existing_position=%s", PassFail(!existingPosition), YesNo(existingPosition)));
+   if(existingPosition)
       return;
 
    int shift = 1;
    datetime barTime = iTime(_Symbol, _Period, shift);
-   if(!InSession(barTime))
+   bool timeframeRecommended = _Period == PERIOD_H4;
+   Diag(StringFormat(
+      "Timeframe check: %s current=%s recommended=PERIOD_H4 blocking=no",
+      PassFail(timeframeRecommended),
+      EnumToString(_Period)
+   ));
+
+   bool sessionOk = InSession(barTime);
+   Diag(StringFormat(
+      "Session filter: %s bar_time=%s start_hour=%d end_hour=%d",
+      PassFail(sessionOk),
+      TimeToString(barTime, TIME_DATE | TIME_MINUTES),
+      InpSessionStartHour,
+      InpSessionEndHour
+   ));
+   if(!sessionOk)
       return;
 
    double spreadPips = (SymbolInfoDouble(_Symbol, SYMBOL_ASK) - SymbolInfoDouble(_Symbol, SYMBOL_BID)) / PipSize();
-   if(spreadPips > InpMaxSpreadPips)
+   bool spreadOk = spreadPips <= InpMaxSpreadPips;
+   Diag(StringFormat("Spread filter: %s spread_pips=%.2f max_spread_pips=%.2f", PassFail(spreadOk), spreadPips, InpMaxSpreadPips));
+   if(!spreadOk)
       return;
 
+   Diag("News filter: PASSED no news filter is configured in this EA.");
+   Diag("Cooldown timer: PASSED no cooldown timer is configured in this EA.");
+
    double emaFast, emaSlow, rsiValue, prevRsi, atrValue, adxValue;
-   if(!CopyOne(fastEmaHandle, 0, shift, emaFast) ||
-      !CopyOne(slowEmaHandle, 0, shift, emaSlow) ||
-      !CopyOne(rsiHandle, 0, shift, rsiValue) ||
-      !CopyOne(rsiHandle, 0, shift + 1, prevRsi) ||
-      !CopyOne(atrHandle, 0, shift, atrValue) ||
-      !CopyOne(adxHandle, 0, shift, adxValue))
+   bool indicatorsReady =
+      CopyOne(fastEmaHandle, 0, shift, emaFast) &&
+      CopyOne(slowEmaHandle, 0, shift, emaSlow) &&
+      CopyOne(rsiHandle, 0, shift, rsiValue) &&
+      CopyOne(rsiHandle, 0, shift + 1, prevRsi) &&
+      CopyOne(atrHandle, 0, shift, atrValue) &&
+      CopyOne(adxHandle, 0, shift, adxValue);
+   Diag(StringFormat("Indicator data check: %s", PassFail(indicatorsReady)));
+   if(!indicatorsReady)
       return;
 
    double open = iOpen(_Symbol, _Period, shift);
@@ -385,6 +517,46 @@ void EvaluateEntry()
    bool longSignal = false;
    bool shortSignal = false;
 
+   Diag(StringFormat(
+      "Trend check: uptrend=%s downtrend=%s mild_uptrend=%s mild_downtrend=%s ema_fast=%.5f ema_slow=%.5f close=%.5f slope_atr=%.5f min_slope_atr=%.5f",
+      YesNo(uptrend),
+      YesNo(downtrend),
+      YesNo(mildUptrend),
+      YesNo(mildDowntrend),
+      emaFast,
+      emaSlow,
+      close,
+      slopeAtr,
+      InpMinSlopeAtr
+   ));
+   Diag(StringFormat(
+      "ADX/body quality check: %s adx=%.2f min_adx=%.2f body_atr=%.4f min_body_atr=%.4f",
+      PassFail(breakoutQuality),
+      adxValue,
+      InpMinAdx,
+      bodyAtr,
+      InpMinBodyAtr
+   ));
+   Diag(StringFormat(
+      "RSI threshold check: rsi=%.2f previous_rsi=%.2f long_recovery=%s short_recovery=%s rsi_long_max=%.2f rsi_short_min=%.2f",
+      rsiValue,
+      prevRsi,
+      YesNo(longRecovery),
+      YesNo(shortRecovery),
+      InpRsiLongMax,
+      InpRsiShortMin
+   ));
+   Diag(StringFormat(
+      "Breakout/pullback check: long_pullback=%s short_pullback=%s long_break=%s short_break=%s enough_range=%s breakout_lookback=%d breakout_atr=%.4f",
+      YesNo(longPullback),
+      YesNo(shortPullback),
+      YesNo(longBreak),
+      YesNo(shortBreak),
+      YesNo(enoughRange),
+      InpBreakoutLookback,
+      InpBreakoutAtr
+   ));
+
    if(InpSignalMode == "pullback")
    {
       longSignal = uptrend && longPullback && longRecovery && longBreak && breakoutQuality;
@@ -409,12 +581,26 @@ void EvaluateEntry()
    else
    {
       Print("Unsupported InpSignalMode: ", InpSignalMode);
+      Diag(StringFormat("Signal generated: no unsupported_signal_mode=%s", InpSignalMode));
       return;
    }
 
+   bool signalGenerated = longSignal || shortSignal;
+   Diag(StringFormat(
+      "Signal generated: %s mode=%s long_signal=%s short_signal=%s allow_long=%s allow_short=%s",
+      YesNo(signalGenerated),
+      InpSignalMode,
+      YesNo(longSignal),
+      YesNo(shortSignal),
+      YesNo(InpAllowLong),
+      YesNo(InpAllowShort)
+   ));
+
    double stopDistance = InpStopAtr * atrValue;
    double volume = RiskVolume(stopDistance);
-   if(volume <= 0.0)
+   bool volumeOk = volume > 0.0;
+   Diag(StringFormat("Risk/volume check: %s stop_distance=%.5f atr=%.5f risk_percent=%.2f calculated_volume=%.2f", PassFail(volumeOk), stopDistance, atrValue, InpRiskPercent, volume));
+   if(!volumeOk)
       return;
 
    trade.SetExpertMagicNumber(InpMagicNumber);
@@ -424,20 +610,61 @@ void EvaluateEntry()
    {
       double entry = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
       double stopLoss = NormalizeDouble(entry - stopDistance, _Digits);
-      if(trade.Buy(volume, _Symbol, entry, stopLoss, 0.0, "FBP long"))
+      Diag(StringFormat("Order attempt: yes side=BUY volume=%.2f entry=%.5f stop_loss=%.5f", volume, entry, stopLoss));
+      bool sent = trade.Buy(volume, _Symbol, entry, stopLoss, 0.0, "FBP long");
+      Diag(StringFormat(
+         "OrderSend result: sent=%s retcode=%u retcode_description=%s deal=%I64u order=%I64u",
+         YesNo(sent),
+         trade.ResultRetcode(),
+         trade.ResultRetcodeDescription(),
+         trade.ResultDeal(),
+         trade.ResultOrder()
+      ));
+      if(sent)
          SavePositionState(entry, stopDistance, true, volume);
    }
    else if(InpAllowShort && shortSignal)
    {
       double entry = SymbolInfoDouble(_Symbol, SYMBOL_BID);
       double stopLoss = NormalizeDouble(entry + stopDistance, _Digits);
-      if(trade.Sell(volume, _Symbol, entry, stopLoss, 0.0, "FBP short"))
+      Diag(StringFormat("Order attempt: yes side=SELL volume=%.2f entry=%.5f stop_loss=%.5f", volume, entry, stopLoss));
+      bool sent = trade.Sell(volume, _Symbol, entry, stopLoss, 0.0, "FBP short");
+      Diag(StringFormat(
+         "OrderSend result: sent=%s retcode=%u retcode_description=%s deal=%I64u order=%I64u",
+         YesNo(sent),
+         trade.ResultRetcode(),
+         trade.ResultRetcodeDescription(),
+         trade.ResultDeal(),
+         trade.ResultOrder()
+      ));
+      if(sent)
          SavePositionState(entry, stopDistance, false, volume);
+   }
+   else
+   {
+      Diag(StringFormat(
+         "Order attempt: no reason=no_enabled_signal long_signal=%s short_signal=%s allow_long=%s allow_short=%s",
+         YesNo(longSignal),
+         YesNo(shortSignal),
+         YesNo(InpAllowLong),
+         YesNo(InpAllowShort)
+      ));
    }
 }
 
 int OnInit()
 {
+   Diag(StringFormat(
+      "OnInit: symbol=%s timeframe=%s account_mode=%s force_test_trade=%s diagnostics=%s",
+      _Symbol,
+      EnumToString(_Period),
+      TradeModeText(),
+      YesNo(ForceTestTrade),
+      YesNo(InpEnableDiagnostics)
+   ));
+
+   bool timeframeRecommended = _Period == PERIOD_H4;
+   Diag(StringFormat("Timeframe check: %s current=%s recommended=PERIOD_H4 blocking=no", PassFail(timeframeRecommended), EnumToString(_Period)));
    if(_Period != PERIOD_H4)
       Print("Recommended timeframe is H4. Current timeframe: ", EnumToString(_Period));
 
@@ -451,11 +678,15 @@ int OnInit()
       rsiHandle == INVALID_HANDLE || atrHandle == INVALID_HANDLE || adxHandle == INVALID_HANDLE)
    {
       Print("Failed to create indicator handles.");
+      Diag("OnInit failed: one or more indicator handles are INVALID_HANDLE.");
       return INIT_FAILED;
    }
+   Diag("OnInit indicator handles: PASSED all handles created.");
 
    trade.SetExpertMagicNumber(InpMagicNumber);
    UpdateChartPanel();
+   if(ForceTestTrade)
+      Diag("ForceTestTrade is armed. It will attempt one 0.01 lot BUY only on a DEMO account after initialization.");
    return INIT_SUCCEEDED;
 }
 
@@ -471,12 +702,27 @@ void OnDeinit(const int reason)
 
 void OnTick()
 {
+   Diag(StringFormat(
+      "Tick received: symbol=%s timeframe=%s bid=%.5f ask=%.5f",
+      _Symbol,
+      EnumToString(_Period),
+      SymbolInfoDouble(_Symbol, SYMBOL_BID),
+      SymbolInfoDouble(_Symbol, SYMBOL_ASK)
+   ));
+   bool timeframeRecommended = _Period == PERIOD_H4;
+   Diag(StringFormat("Timeframe check: %s current=%s recommended=PERIOD_H4 blocking=no", PassFail(timeframeRecommended), EnumToString(_Period)));
+
    ManageOpenPosition();
    UpdateChartPanel();
+   TryForceTestTrade();
 
    datetime currentBarTime = iTime(_Symbol, _Period, 0);
    if(currentBarTime == lastBarTime)
+   {
+      Diag(StringFormat("New-bar gate: FAILED current_bar_time=%s last_bar_time=%s entry_evaluation=no", TimeToString(currentBarTime, TIME_DATE | TIME_MINUTES), TimeToString(lastBarTime, TIME_DATE | TIME_MINUTES)));
       return;
+   }
+   Diag(StringFormat("New-bar gate: PASSED current_bar_time=%s previous_bar_time=%s entry_evaluation=yes", TimeToString(currentBarTime, TIME_DATE | TIME_MINUTES), TimeToString(lastBarTime, TIME_DATE | TIME_MINUTES)));
    lastBarTime = currentBarTime;
 
    EvaluateEntry();

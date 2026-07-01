@@ -44,6 +44,13 @@
    - `M1_Scalping_Experimental_NOT_RECOMMENDED_FOR_LIVE.set`
 5. فقط اگر در بروکر خودت با داده real ticks مثبت شد، روی Demo تست کن.
 
+## اگر هیچ معامله ای باز نشد
+
+- `InpEnableDiagnostics=true` را فعال کن.
+- لاگ های `[FBP_DIAG]` را در تب `Experts` و `Journal` بخوان.
+- برای تست اجازه معامله فقط روی Demo می توانی `ForceTestTrade=true` کنی.
+- ForceTestTrade فقط یک سفارش `0.01 lot` باز می کند، آن هم فقط اگر حساب Demo باشد و بروکر حجم دقیق `0.01` را قبول کند.
+
 ## پیشنهاد من
 
 برای استفاده جدی تر، فعلا نسخه H4 بهتر است. نسخه M1 را فقط برای تحقیق و تست بیشتر نگه دار.
