@@ -102,6 +102,7 @@ An experimental M1 scalping research preset is also included, but recent tests
 did not find it profitable after costs:
 
 ```text
+mt5/Experts/ForexM1ScalpingResearchEA.mq5
 docs/M1_SCALPING_RESEARCH_FA.md
 packages/forex_m1_scalping_research_package.zip
 ```

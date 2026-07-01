@@ -5,8 +5,8 @@
 
 ## فایل های نسخه M1
 
-- Expert Advisor مشترک:
-  - `mt5/Experts/ForexBreakoutPullbackEA.mq5`
+- Expert Advisor جداگانه اسکالپ:
+  - `mt5/Experts/ForexM1ScalpingResearchEA.mq5`
 - preset مخصوص M1:
   - `mt5/Presets/M1_Scalping_Experimental_NOT_RECOMMENDED_FOR_LIVE.set`
 - پارامترها و نتیجه تست:
@@ -33,10 +33,11 @@
 
 ## اگر خواستی فقط دمو تست کنی
 
-1. فایل EA را در `MQL5/Experts` کپی کن.
+1. فایل EA اسکالپ را در `MQL5/Experts` کپی کن:
+   - `ForexM1ScalpingResearchEA.mq5`
 2. فایل preset را در `MQL5/Presets` کپی کن.
 3. در MT5 Strategy Tester:
-   - Expert: `ForexBreakoutPullbackEA`
+   - Expert: `ForexM1ScalpingResearchEA`
    - Timeframe: `M1`
    - Symbol: اول فقط `EURUSD`
    - Model: `Every tick based on real ticks`
