@@ -15,6 +15,10 @@
 - `config/final_4h_three_pair_params.json`
   - پارامترهای نهایی بک تست شده
 
+- `mt5/Presets/H4_Breakout_Pullback_Recommended.set`
+  - preset آماده MT5 برای ربات اصلی H4
+  - شامل diagnostics روشن و ForceTestTrade خاموش
+
 - `results/focused_final_package_summary.json`
   - خلاصه نتیجه نهایی بک تست و walk-forward
 

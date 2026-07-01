@@ -23,6 +23,8 @@
   - `mt5/Experts/ForexBreakoutPullbackEA.mq5`
 - پارامتر نهایی بک تست شده:
   - `config/final_4h_three_pair_params.json`
+- preset آماده برای MT5:
+  - `mt5/Presets/H4_Breakout_Pullback_Recommended.set`
 - خلاصه نتیجه نهایی:
   - `results/focused_final_package_summary.json`
 
@@ -59,6 +61,8 @@
 8. تاریخ تست:
    - تا جای ممکن طولانی، حداقل 1 تا 2 سال
 9. در Inputs این موارد را چک کن:
+   - اگر خواستی سریع تنظیم کنی، دکمه `Load` را بزن و این preset را انتخاب کن:
+     - `H4_Breakout_Pullback_Recommended.set`
    - `InpRiskPercent = 0.5` یا `1.0`
    - `InpMaxSpreadPips = 2.0`
    - `InpShowChartPanel = true` برای نمایش پنل روی چارت
