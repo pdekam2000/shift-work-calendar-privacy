@@ -6,9 +6,9 @@
 ## فایل های نسخه M1
 
 - Expert Advisor جداگانه اسکالپ:
-  - `mt5/Experts/ForexM1ScalpingResearchEA.mq5`
+  - `mt5/Experts/scalpingrobot.mq5`
 - preset مخصوص M1:
-  - `mt5/Presets/M1_Scalping_Experimental_NOT_RECOMMENDED_FOR_LIVE.set`
+  - `mt5/Presets/scalpingrobot.set`
 - پارامترها و نتیجه تست:
   - `config/m1_scalping_experimental_params.json`
   - `results/m1_scalping_experimental_summary.json`
@@ -34,21 +34,21 @@
 ## اگر خواستی فقط دمو تست کنی
 
 1. فایل EA اسکالپ را در `MQL5/Experts` کپی کن:
-   - `ForexM1ScalpingResearchEA.mq5`
+   - `scalpingrobot.mq5`
 2. فایل preset را در `MQL5/Presets` کپی کن.
 3. در MT5 Strategy Tester:
-   - Expert: `ForexM1ScalpingResearchEA`
+   - Expert: `scalpingrobot`
    - Timeframe: `M1`
    - Symbol: اول فقط `EURUSD`
    - Model: `Every tick based on real ticks`
 4. در Inputs دکمه `Load` را بزن و فایل زیر را انتخاب کن:
-   - `M1_Scalping_Experimental_NOT_RECOMMENDED_FOR_LIVE.set`
+   - `scalpingrobot.set`
 5. فقط اگر در بروکر خودت با داده real ticks مثبت شد، روی Demo تست کن.
 
 ## اگر هیچ معامله ای باز نشد
 
 - `InpEnableDiagnostics=true` را فعال کن.
-- لاگ های `[FBP_DIAG]` را در تب `Experts` و `Journal` بخوان.
+- لاگ های `[SCALPINGROBOT_DIAG]` را در تب `Experts` و `Journal` بخوان.
 - برای تست اجازه معامله فقط روی Demo می توانی `ForceTestTrade=true` کنی.
 - ForceTestTrade فقط یک سفارش `0.01 lot` باز می کند، آن هم فقط اگر حساب Demo باشد و بروکر حجم دقیق `0.01` را قبول کند.
 

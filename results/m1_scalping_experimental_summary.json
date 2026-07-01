@@ -90,8 +90,9 @@
       ]
     }
   ],
-  "download_package": "packages/forex_m1_scalping_research_package.zip",
-  "included_preset": "mt5/Presets/M1_Scalping_Experimental_NOT_RECOMMENDED_FOR_LIVE.set",
+  "download_package": "packages/scalpingrobot.zip",
+  "included_ea": "mt5/Experts/scalpingrobot.mq5",
+  "included_preset": "mt5/Presets/scalpingrobot.set",
   "notes": [
     "M1 scalping is extremely sensitive to spread, slippage, and broker execution.",
     "Do not run this preset live based on the current tests.",

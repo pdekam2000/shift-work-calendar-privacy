@@ -9,7 +9,7 @@
   - منطق H4 breakout-pullback با ATR/EMA/RSI/ADX و سه سطح TP
   - پنل نمایشی روی چارت با نام مالک، لوگوی رنگی DRAGON FX و وضعیت کار ربات
 
-- `mt5/Experts/ForexM1ScalpingResearchEA.mq5`
+- `mt5/Experts/scalpingrobot.mq5`
   - Expert Advisor جداگانه برای اسکالپ 1 دقیقه ای
   - فقط برای Demo و Strategy Tester
 
@@ -26,7 +26,7 @@
 - `results/focused_final_package_summary.json`
   - خلاصه نتیجه نهایی بک تست و walk-forward
 
-- `mt5/Presets/M1_Scalping_Experimental_NOT_RECOMMENDED_FOR_LIVE.set`
+- `mt5/Presets/scalpingrobot.set`
   - preset آزمایشی برای اسکالپ 1 دقیقه ای
   - طبق تست فعلی برای Live توصیه نمی شود
 

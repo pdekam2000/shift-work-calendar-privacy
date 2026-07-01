@@ -28,6 +28,6 @@ InpAllowLong=true
 InpAllowShort=true
 InpShowChartPanel=true
 InpOwnerName=pedram kamangar
-InpPanelStatusText=M1 experimental scalping preset - demo testing only.
+InpPanelStatusText=scalpingrobot - M1 demo testing only.
 InpEnableDiagnostics=true
 ForceTestTrade=false

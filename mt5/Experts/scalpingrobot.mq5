@@ -1,5 +1,5 @@
 //+------------------------------------------------------------------+
-//| ForexM1ScalpingResearchEA.mq5                                    |
+//| scalpingrobot.mq5                                                 |
 //| Separate M1 scalping research EA. Demo/Strategy Tester only.      |
 //+------------------------------------------------------------------+
 #property copyright "Research software - no profit guarantee"
@@ -37,7 +37,7 @@ input bool   InpAllowLong          = true;
 input bool   InpAllowShort         = true;
 input bool   InpShowChartPanel     = true;
 input string InpOwnerName          = "pedram kamangar";
-input string InpPanelStatusText    = "M1 scalping research EA - demo testing only.";
+input string InpPanelStatusText    = "scalpingrobot - M1 demo testing only.";
 input bool   InpEnableDiagnostics  = true;
 input bool   ForceTestTrade        = false;
 
@@ -54,7 +54,7 @@ bool forceTestTradeDone = false;
 void Diag(const string message)
 {
    if(InpEnableDiagnostics)
-      Print("[M1_SCALP_DIAG] ", message);
+      Print("[SCALPINGROBOT_DIAG] ", message);
 }
 
 string PassFail(const bool passed)
@@ -293,7 +293,7 @@ void UpdateChartPanel()
    string duty = HasPosition() ? "M1 duty: managing open scalp trade." : "M1 duty: scanning scalping signals.";
    PanelBox("background", 10, 10, 410, 122, clrBlack);
    PanelBox("accent", 10, 10, 5, 122, clrDeepSkyBlue);
-   PanelLabel("logo", 24, 18, "DRAGON FX M1 SCALPER", clrOrangeRed, 14);
+   PanelLabel("logo", 24, 18, "SCALPINGROBOT", clrOrangeRed, 14);
    PanelLabel("owner", 24, 46, "Owner: " + InpOwnerName, clrWhite, 10);
    PanelLabel("status", 24, 66, InpPanelStatusText, clrPaleGreen, 10);
    PanelLabel("duty", 24, 86, duty, clrLightSkyBlue, 10);
@@ -506,7 +506,7 @@ int OnInit()
    bool timeframeOk = _Period == PERIOD_M1;
    Diag(StringFormat("Timeframe check: %s current=%s required=PERIOD_M1 blocking=no", PassFail(timeframeOk), EnumToString(_Period)));
    if(_Period != PERIOD_M1)
-      Print("Recommended timeframe for ForexM1ScalpingResearchEA is M1. Current timeframe: ", EnumToString(_Period));
+      Print("Recommended timeframe for scalpingrobot is M1. Current timeframe: ", EnumToString(_Period));
 
    fastEmaHandle = iMA(_Symbol, _Period, InpFastEma, 0, MODE_EMA, PRICE_CLOSE);
    slowEmaHandle = iMA(_Symbol, _Period, InpSlowEma, 0, MODE_EMA, PRICE_CLOSE);
